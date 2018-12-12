@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Process URLs
+
+Copyright (c) 2018 Thomas Hungenberg
+
+Licensed under GNU Affero General Public License v3.0
+<http://www.gnu.org/licenses/agpl-3.0.html>
+
+This script takes a list of URLs like
+http://www.example.com/path/file.ext
+as input and returns the (sanitized) URL along with the
+IP address the hostname resolves to in CSV format:
+"123.45.67.89","http://www[.]example[.]com/path/file.ext"
+Optionally adds AS number and description and checks
+HTTP status code for http(s) URLs.
+
+Output is printed to stdout, errors to stderr.
+"""
+
+import argparse
+import io
+import sys
+import re
+import irnettools.dns
+import irnettools.validate
+import urllib.request
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(usage='%(prog)s [-acns] <filename>',
+                                     description='Process URLs.')
+    parser.add_argument('filename', nargs=1, help='file containing URLs')
+    parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    parser.add_argument('-n', action='store_true', help='check HTTP status code for http(s) URLs')
+    parser.add_argument('-s', action='store_true', help='sanitize host in output')
+    parser.add_argument('-v', '--version', action='version',
+                        version='IRNetTools %(prog)s version {}'.format(irnettools.version),
+                        help='show the version number and exit')
+    args = parser.parse_args()
+
+    try:
+        dnslookup = irnettools.dns.Lookup()
+    except ImportError as e:
+        print('Error: ' + str(e), file=sys.stderr)
+        exit(1)
+
+    try:
+        with io.open(args.filename[0], 'r') as urlfile:
+            linenumber = 0
+            if not args.c:
+                header = '"ip","url"'
+                if args.n:
+                    header = header + ',"http_status"'
+                print(header)
+            for line in urlfile:
+                linenumber += 1
+                try:
+                    # split record into protocol, host and path
+                    m = re.match("^([a-zA-Z]+)(:\/\/)([^\/]+)(\/[\x20-\x7f]*)?$", line.strip())
+                    proto = m.group(1).lower()
+                    host = m.group(3).lower()
+                    if m.group(4):
+                        path = m.group(4)
+                    else:
+                        path = ''
+                except:
+                    print('Invalid record in line', linenumber, file=sys.stderr)
+                    continue
+
+                # check if host is a valid hostname or IP
+                if irnettools.validate.hostname(host):
+                    # valid hostname
+                    try:
+                        ip = dnslookup.ip(host)
+                    except irnettools.errors.DNSError as e:
+                        print('Error: ' + str(e), file=sys.stderr)
+                        exit(1)
+
+                    if not ip:
+                        print('Hostname', host, 'does not resolve', file=sys.stderr)
+                        continue
+
+                elif irnettools.validate.ip(host):
+                    # valid IP
+                    ip = host
+
+                else:
+                    print('Neither valid hostname nor IP address in line %d.' % linenumber, file=sys.stderr)
+                    continue
+
+                url = proto + "://" + host + path
+                if args.n:
+                    status = None
+                    if re.match('^https?$', proto):
+                        try:
+                            status = urllib.request.urlopen(url).getcode()
+                        except:
+                            pass
+
+                if args.s:
+                    # sanitize url
+                    url = proto + "://" + host.replace(".", "[.]") + path
+
+                output = '"%s","%s"' % (ip, url)
+                if args.n:
+                    if status:
+                        output = output + ',"%d"' % status
+                    else:
+                        output = output + ',""'
+
+                print(output)
+
+        exit(0)
+
+    except IOError:
+        print("Unable to open input file")
+        exit(1)
+
+#

@@ -1,0 +1,3 @@
+https://www.google.com/intl/en/about/?fg=1&utm_source=google-US
+HTTP://www.heise.de
+ftp://134.76.12.6/pub/FreeBSD/README.TXT

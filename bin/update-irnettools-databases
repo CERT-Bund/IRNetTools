@@ -1,0 +1,49 @@
+#! /bin/bash
+PATH=/bin:/usr/bin
+
+DATABASES="./databases"
+
+###################################
+### NO USER CONFIGURATION BELOW ###
+###################################
+
+GEOIP_COUNTRY_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
+GEOIP_ASN_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
+GEOIP_COUNTRY_FILE="${DATABASES}/geoip/GeoLite2-Country.mmdb"
+GEOIP_ASN_FILE="${DATABASES}/geoip/GeoLite2-ASN.mmdb"
+
+abspath()
+{
+    [ "$#" -eq 1 ] || fail "No path given"
+    echo $(cd $(dirname $1); pwd)/$(basename $1)
+}
+
+fail()
+{
+    echo >&2 "$@"
+    [ -d "$TMP_DIR" ] && rm -rf "$TMP_DIR"
+    exit 1
+}
+
+which wget >/dev/null 2>&1 || fail "wget not installed. Please install it."
+
+TMP_DIR=`mktemp -d`
+DB_DIR="${DATABASES}/geoip/"
+[ -d "$DB_DIR" ] || mkdir -p "$DB_DIR"
+
+echo "Updating databases in $DATABASES"
+echo "Updating Maxmind GeoLite2 Country database."
+wget -q -O "$TMP_DIR/country.tgz" "$GEOIP_COUNTRY_URL"
+[ $? -gt 0 ] && fail "Downloading database failed"
+tar xzf "$TMP_DIR/country.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
+[ $? -gt 0 ] && fail "Unpacking database failed"
+mv -f `find "$TMP_DIR/" -name GeoLite2-Country.mmdb` "$GEOIP_COUNTRY_FILE"
+
+echo "Updating Maxmind GeoLite2 ASN database."
+wget -q -O "$TMP_DIR/asn.tgz" "$GEOIP_ASN_URL"
+[ $? -gt 0 ] && fail "Downloading database failed"
+tar xzf "$TMP_DIR/asn.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
+[ $? -gt 0 ] && fail "Unpacking database failed"
+mv -f `find "$TMP_DIR/" -name GeoLite2-ASN.mmdb` "$GEOIP_ASN_FILE"
+
+#

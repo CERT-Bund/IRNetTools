@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""add_asgeo
+
+Copyright (c) 2018 Thomas Hungenberg
+
+Licensed under GNU Affero General Public License v3.0
+<http://www.gnu.org/licenses/agpl-3.0.html>
+
+This script takes a CSV file with column "ip" and arbitrary
+additional columns as input and returns each row with
+AS number, organization and country information for the
+respective IP address added.
+
+Output is printed to stdout, errors to stderr.
+"""
+
+import argparse
+import io
+import sys
+import re
+import csv
+import irnettools.validate
+import irnettools.errors
+import irnettools.maxmind
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
+                                     description='Add ASN, organization and country information for IP addresses to CSV file.')
+    parser.add_argument('filename', nargs=1, help='CSV file with column \'ip\'. Use \'-\' as filename to read from stdin.')
+    parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    parser.add_argument('-v', '--version', action='version',
+                        version='IRNetTools %(prog)s version {}'.format(irnettools.version),
+                        help='show the version number and exit')
+    args = parser.parse_args()
+
+    try:
+        mmlookup = irnettools.maxmind.Lookup()
+    except irnettools.errors.MaxmindError as e:
+        print('Error: Maxmind lookup not available: ' + str(e), file=sys.stderr)
+        exit(1)
+
+    try:
+        with io.open(args.filename[0], 'r') if args.filename[0] is not "-" else sys.stdin as infile:
+            content = csv.reader(infile, delimiter=',', quotechar='"')
+            output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            for idx, row in enumerate(content):
+                if idx == 0:
+                    ipcount = row.count("ip")
+                    if ipcount != 1:
+                        print('Error: No or multiple columns "ip" in input file', file=sys.stderr)
+                        exit(1)
+                    else:
+                        ippos = row.index("ip")
+                        if not args.c:
+                            output.writerow(row + ['asn', 'org', 'country'])
+                else:
+                    ip = row[ippos]
+                    if not irnettools.validate.ip(ip):
+                        print('Invalid IP in line %d' % idx, file=sys.stderr)
+                        continue
+                    asn = mmlookup.asn(ip)
+                    if asn:
+                        out = row + [asn]
+                    else:
+                        out = row + ['']
+                    organization = mmlookup.organization(ip)
+                    if organization:
+                        out = out + [organization]
+                    else:
+                        out = out + ['']
+                    country = mmlookup.country(ip)
+                    if country:
+                        out = out + [country]
+                    else:
+                        out = out + ['']
+                    output.writerow(out)
+                
+    except IOError:
+        print("Error: Unable to open CSV input file")
+        exit(1)
+
+#

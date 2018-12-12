@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""hostinfo
+
+Copyright (c) 2018 Thomas Hungenberg
+
+Licensed under GNU Affero General Public License v3.0
+<http://www.gnu.org/licenses/agpl-3.0.html>
+
+This script takes a single hostname/IP address or a file containing
+a list of hostnames/IP addresses (one record per line) as input
+and returns the hostname and corresponding IP address along with
+AS number, organization and country information in CSV format
+for each record:
+"ip","hostname","asn","org","country"
+"123.45.67.89","www.example.com","12345","Provider Inc.","US"
+
+Output is printed to stdout, errors to stderr.
+"""
+
+import argparse
+import sys
+import io
+import re
+import irnettools.validate
+import irnettools.errors
+import irnettools.dns
+import irnettools.maxmind
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(usage='%(prog)s <host> | -f <filename>',
+                                     description='Return AS number, organization and country for hostnames or IP addresses',
+                                     epilog='Specify either a single hostname/IP address or use\
+                                     -f <filename> to process a list of hostnames/IP addresses.')
+    group = parser.add_argument_group()
+    group.add_argument('host', nargs='?', help='single hostname or IP address')
+    group.add_argument('-f', metavar='filename', help='file containing list of hostnames/IP addresses')
+    group.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    group.add_argument('-v', '--version', action='version',
+                       version='IRNetTools %(prog)s version {}'.format(irnettools.version),
+                       help='show the version number and exit')
+    args = parser.parse_args()
+
+    try:
+        dnslookup = irnettools.dns.Lookup()
+    except ImportError as e:
+        print('Error: ' + str(e), file=sys.stderr)
+        exit(1)
+
+    try:
+        mmlookup = irnettools.maxmind.Lookup()
+    except irnettools.errors.MaxmindError as e:
+        print('Error: Maxmind lookup not available: ' + str(e), file=sys.stderr)
+        exit(1)
+
+    if (args.host and args.f) or (not args.host and not args.f):
+        parser.print_help()
+        exit(0)
+    elif (args.host):
+        # single hostname/IP
+
+        # check if input is a valid IP address
+        if irnettools.validate.ip(args.host):
+            ip = args.host
+            try:
+                hostname = dnslookup.hostname(ip)
+            except irnettools.errors.DNSError as e:
+                print('Error: ' + str(e), file=sys.stderr)
+                exit(1)
+            if not hostname:
+                hostname = ''
+            
+        # check if input is a valid hostname
+        elif irnettools.validate.hostname(args.host):
+            hostname = args.host
+            try:
+                ip = dnslookup.ip(hostname)
+            except irnettools.errors.DNSError as e:
+                print('Error: ' + str(e), file=sys.stderr)
+                exit(1)
+
+            if not ip:
+                print('Hostname does not resolve: ' + hostname, file=sys.stderr)
+                exit(1)
+        else:
+            print('Not a valid IP address nor a valid hostname: %s' % args.host, file=sys.stderr)
+            exit(1)
+
+        if ip:
+            # get ASN, organization and country for IP
+            asn = mmlookup.asn(ip)
+            if not asn:
+                asn = ''
+            org = mmlookup.organization(ip)
+            if not org:
+                org = ''
+            country = mmlookup.country(ip)
+            if not country:
+                country = ''
+
+            if not args.c:
+                print('"ip","hostname","asn","org","country"')
+            print('"%s","%s","%s","%s","%s"' % (ip, hostname, asn, org, country))
+
+    elif (args.f):
+        # filename
+        try:
+            with io.open(args.f, 'r') as ipfile:
+                linenumber = 0
+                if not args.c:
+                    print('"ip","hostname","asn","org","country"')
+                for line in ipfile:
+                    linenumber += 1
+                    host = line.strip()
+
+                    # check if input is a valid IP address
+                    if irnettools.validate.ip(host):
+                        ip = host
+                        try:
+                            hostname = dnslookup.hostname(host)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: ' + str(e), file=sys.stderr)
+                            exit(1)
+                        if not hostname:
+                            hostname = ''
+            
+                    # check if input is a valid hostname
+                    elif irnettools.validate.hostname(host):
+                        hostname = host
+                        try:
+                            ip = dnslookup.ip(hostname)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: ' + str(e), file=sys.stderr)
+                            exit(1)
+                        if not ip:
+                            print('Hostname does not resolve: ' + hostname, file=sys.stderr)
+                            continue
+                    else:
+                        print('Not a valid IP address nor a valid hostname in line %d: %s' % (linenumber, args.host), file=sys.stderr)
+                        continue
+
+                    # get ASN, organization and country for IP
+                    asn = mmlookup.asn(ip)
+                    if not asn:
+                        asn = ''
+                    org = mmlookup.organization(ip)
+                    if not org:
+                        org = ''
+                    country = mmlookup.country(ip)
+                    if not country:
+                        country = ''
+                    print('"%s","%s","%s","%s","%s"' % (ip, hostname, asn, org, country))
+            
+        except IOError:
+            print("Unable to open input file")
+            exit(1)
+
+#
