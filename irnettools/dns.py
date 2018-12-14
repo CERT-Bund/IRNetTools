@@ -11,7 +11,6 @@ Requires dnspython (Package python3-dnspython on Debian).
 """
 
 import re
-import irnettools.config
 import irnettools.errors
 import irnettools.validate
 
@@ -23,10 +22,11 @@ except ImportError:
 
 class Lookup:
     """Provides methods for IP lookups with caching of results for speedup."""
-    def __init__(self):
+    def __init__(self, config):
         if dns is None:
             raise ImportError('Could not import dnspython')
 
+        self.config = config
         self.resolver = dns.resolver.Resolver()
         self.hosttoipv4cache = {}
         self.hosttoipv6cache = {}

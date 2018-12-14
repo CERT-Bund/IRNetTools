@@ -11,6 +11,10 @@ class Error(Exception):
     """Base class for exceptions in this module."""
     pass
 
+class ConfigError(Error):
+    """Exception raised for config errors."""
+    pass
+
 class DNSError(Error):
     """Exception raised for DNS errors."""
     pass

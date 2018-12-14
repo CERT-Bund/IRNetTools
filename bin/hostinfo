@@ -23,8 +23,7 @@ import io
 import re
 import irnettools.validate
 import irnettools.errors
-import irnettools.dns
-import irnettools.maxmind
+import irnettools.lookup
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <host> | -f <filename>',
@@ -41,15 +40,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        dnslookup = irnettools.dns.Lookup()
-    except ImportError as e:
+        lookup = irnettools.lookup.Lookup()
+    except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
         print('Error: ' + str(e), file=sys.stderr)
-        exit(1)
-
-    try:
-        mmlookup = irnettools.maxmind.Lookup()
-    except irnettools.errors.MaxmindError as e:
-        print('Error: Maxmind lookup not available: ' + str(e), file=sys.stderr)
         exit(1)
 
     if (args.host and args.f) or (not args.host and not args.f):
@@ -62,7 +55,7 @@ if __name__ == '__main__':
         if irnettools.validate.ip(args.host):
             ip = args.host
             try:
-                hostname = dnslookup.hostname(ip)
+                hostname = lookup.hostname(ip)
             except irnettools.errors.DNSError as e:
                 print('Error: ' + str(e), file=sys.stderr)
                 exit(1)
@@ -73,7 +66,7 @@ if __name__ == '__main__':
         elif irnettools.validate.hostname(args.host):
             hostname = args.host
             try:
-                ip = dnslookup.ip(hostname)
+                ip = lookup.ip(hostname)
             except irnettools.errors.DNSError as e:
                 print('Error: ' + str(e), file=sys.stderr)
                 exit(1)
@@ -87,13 +80,13 @@ if __name__ == '__main__':
 
         if ip:
             # get ASN, organization and country for IP
-            asn = mmlookup.asn(ip)
+            asn = lookup.asn(ip)
             if not asn:
                 asn = ''
-            org = mmlookup.organization(ip)
+            org = lookup.organization(ip)
             if not org:
                 org = ''
-            country = mmlookup.country(ip)
+            country = lookup.country(ip)
             if not country:
                 country = ''
 
@@ -116,7 +109,7 @@ if __name__ == '__main__':
                     if irnettools.validate.ip(host):
                         ip = host
                         try:
-                            hostname = dnslookup.hostname(host)
+                            hostname = lookup.hostname(host)
                         except irnettools.errors.DNSError as e:
                             print('Error: ' + str(e), file=sys.stderr)
                             exit(1)
@@ -127,7 +120,7 @@ if __name__ == '__main__':
                     elif irnettools.validate.hostname(host):
                         hostname = host
                         try:
-                            ip = dnslookup.ip(hostname)
+                            ip = lookup.ip(hostname)
                         except irnettools.errors.DNSError as e:
                             print('Error: ' + str(e), file=sys.stderr)
                             exit(1)
@@ -139,13 +132,13 @@ if __name__ == '__main__':
                         continue
 
                     # get ASN, organization and country for IP
-                    asn = mmlookup.asn(ip)
+                    asn = lookup.asn(ip)
                     if not asn:
                         asn = ''
-                    org = mmlookup.organization(ip)
+                    org = lookup.organization(ip)
                     if not org:
                         org = ''
-                    country = mmlookup.country(ip)
+                    country = lookup.country(ip)
                     if not country:
                         country = ''
                     print('"%s","%s","%s","%s","%s"' % (ip, hostname, asn, org, country))

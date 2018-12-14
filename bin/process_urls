@@ -21,8 +21,8 @@ import argparse
 import io
 import sys
 import re
-import irnettools.dns
 import irnettools.validate
+import irnettools.lookup
 import urllib.request
 
 if __name__ == '__main__':
@@ -38,8 +38,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        dnslookup = irnettools.dns.Lookup()
-    except ImportError as e:
+        lookup = irnettools.lookup.Lookup()
+    except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
         print('Error: ' + str(e), file=sys.stderr)
         exit(1)
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
                 if irnettools.validate.hostname(host):
                     # valid hostname
                     try:
-                        ip = dnslookup.ip(host)
+                        ip = lookup.ip(host)
                     except irnettools.errors.DNSError as e:
                         print('Error: ' + str(e), file=sys.stderr)
                         exit(1)

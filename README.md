@@ -7,6 +7,8 @@ Requires Python 3.5 or later.
 
 Uses Maxmind GeoLite2 databases (https://dev.maxmind.com/geoip/geoip2/geolite2/).
 
+Uses IP2ASN lookup service provided by Team Cymru (https://www.team-cymru.com/IP-ASN-mapping.html).
+
 Uses abuse contact lookup service provided by Abusix (https://www.abusix.com/contactdb).
 
 ## Tools
@@ -112,6 +114,17 @@ so the tools can be concatenated like this:
     "172.217.19.68","www.google.com","15169","Google LLC","US","15169","Google LLC","US","network-abuse@google.com"
     "212.227.17.168","smtp.gmx.de","8560","1&1 Internet SE","DE","8560","1&1 Internet SE","DE","abuse@oneandone.net"
     "2001:470:1:18::119","ipv6.test-ipv6.com","6939","Hurricane Electric LLC","US","6939","Hurricane Electric LLC","US","abuse@he.net"
+
+## Configuration
+
+Configuration is done in `irnettools/config.py`.
+
+| Variable | Value |
+| --- | --- |
+| `DATABASES` | Path to databases (e.g. Maxmind) |
+| `ASN_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
+| `ORG_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
+| `COUNTRY_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
 
 ## Databases
 

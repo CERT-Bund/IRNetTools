@@ -21,7 +21,7 @@ import re
 import csv
 import irnettools.validate
 import irnettools.errors
-import irnettools.maxmind
+import irnettools.lookup
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
@@ -34,9 +34,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        mmlookup = irnettools.maxmind.Lookup()
-    except irnettools.errors.MaxmindError as e:
-        print('Error: Maxmind lookup not available: ' + str(e), file=sys.stderr)
+        lookup = irnettools.lookup.Lookup()
+    except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
+        print('Error: ' + str(e), file=sys.stderr)
         exit(1)
 
     try:
@@ -58,17 +58,17 @@ if __name__ == '__main__':
                     if not irnettools.validate.ip(ip):
                         print('Invalid IP in line %d' % idx, file=sys.stderr)
                         continue
-                    asn = mmlookup.asn(ip)
+                    asn = lookup.asn(ip)
                     if asn:
                         out = row + [asn]
                     else:
                         out = row + ['']
-                    organization = mmlookup.organization(ip)
+                    organization = lookup.organization(ip)
                     if organization:
                         out = out + [organization]
                     else:
                         out = out + ['']
-                    country = mmlookup.country(ip)
+                    country = lookup.country(ip)
                     if country:
                         out = out + [country]
                     else:

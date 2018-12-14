@@ -9,7 +9,6 @@ Licensed under GNU Affero General Public License v3.0
 Requires geoip2
 """
 
-import irnettools.config
 import irnettools.errors
 import irnettools.validate
 
@@ -23,17 +22,18 @@ class Lookup:
     """
     Maxmind database lookup
     """
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         if geoip2 is None:
-            raise irnettools.errors.MaxmindError('Could not import geoip2')
+            raise ImportError('Could not import geoip2')
 
         try:
-            self.countrydb = geoip2.database.Reader(irnettools.config.maxmind_country_database)
+            self.countrydb = geoip2.database.Reader(self.config['maxmind_country_database'])
         except FileNotFoundError:
             raise irnettools.errors.MaxmindError('Maxmind GeoLite2 Country database file not found. Check configuration or run \'update-irnettools-databases\'.')
 
         try:
-            self.asndb = geoip2.database.Reader(irnettools.config.maxmind_asn_database)
+            self.asndb = geoip2.database.Reader(self.config['maxmind_asn_database'])
         except FileNotFoundError:
             raise irnettools.errors.MaxmindError('Maxmind GeoLite2 ASN database file not found. Check configuration or run \'update-irnettools-databases\'.')
 
@@ -41,29 +41,9 @@ class Lookup:
         self.iptoasncache= {}
         self.iptoorgcache= {}
 
-    def country(self, ip):
-        """
-        Returns country code for IP address
-        or None if IP address not in database
-        """
-        if not irnettools.validate.ip(ip):
-            raise irnettools.errors.InvalidIPError
-
-        if ip in self.iptocountrycache:
-            # result in cache
-            return self.iptocountrycache[ip]
-        else:
-            try:
-                country = self.countrydb.country(ip).registered_country.iso_code
-                self.iptocountrycache[ip] = country
-                return country
-            except geoip2.errors.AddressNotFoundError:
-                self.iptocountrycache[ip] = None
-                return None
-
     def asn(self, ip):
         """
-        Returns AS number for IP address
+        Returns AS number announcing IP address
         or None if IP address not in database
         """
         if not irnettools.validate.ip(ip):
@@ -99,4 +79,24 @@ class Lookup:
                 return org
             except geoip2.errors.AddressNotFoundError:
                 self.iptoorgcache[ip] = None
+                return None
+
+    def country(self, ip):
+        """
+        Returns country code for IP address
+        or None if IP address not in database
+        """
+        if not irnettools.validate.ip(ip):
+            raise irnettools.errors.InvalidIPError
+
+        if ip in self.iptocountrycache:
+            # result in cache
+            return self.iptocountrycache[ip]
+        else:
+            try:
+                country = self.countrydb.country(ip).registered_country.iso_code
+                self.iptocountrycache[ip] = country
+                return country
+            except geoip2.errors.AddressNotFoundError:
+                self.iptocountrycache[ip] = None
                 return None
