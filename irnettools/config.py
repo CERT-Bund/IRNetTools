@@ -3,7 +3,7 @@ IRNetTools configuration
 """
 
 # Location of databases
-DATABASES = "./databases"
+DATABASES = "~/irnettools-databases"
 
 # Data source for ASN, organization and country information
 # Valid values: "cymru" or "maxmind"

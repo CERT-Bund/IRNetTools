@@ -132,17 +132,16 @@ IRNetTools uses Maxmind GeoLite2 databases for ASN, organization and country loo
 
 Run `update-irnettools-databases` to install/update the databases.
 
-By default, databases are stored in `./databases`.
+By default, databases are stored in `~/irnettools-databases`.
 To change the location of the databases, modify variable `DATABASES`
 in `bin/update-irnettools-databases` and `irnettools/config.py`.
 
 ## Installation in a Python virtual env
 
-    $ git clone git@github.com:cert-bund/irnettools.git
-    $ python3 -m venv irnt
-    $ cd irnt
+    $ python3 -m venv irnettools
+    $ cd irnettools
     $ source bin/activate
-    $ pip3 install ../irnettools/
+    $ pip3 install https://github.com/cert-bund/irnettools/archive/master.zip
     $ update-irnettools-databases
     
 ## License

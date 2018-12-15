@@ -19,16 +19,22 @@ import irnettools.maxmind
 class Lookup:
     """Main Lookup class providing config"""
     def __init__(self):
+        self.config = {}
+
         try:
             db = irnettools.config.DATABASES
         except AttributeError:
             raise irnettools.errors.ConfigError('DATABASES not defined in config.py')
 
+        db_path = os.path.abspath(os.path.join(os.path.expandvars(os.path.expanduser(db)), ''))
         try:
-            if not os.path.isdir(db):
-                raise irnettools.errors.ConfigError('DATABASES directory does not exist. Check config.py.')
+            if not os.path.isdir(db_path):
+                raise irnettools.errors.ConfigError('DATABASES directory \'' + db_path + '\' does not exist. Check config.py.')
         except TypeError:
             raise irnettools.errors.ConfigError('Invalid value for DATABASES in config.py')
+
+        # Path to databases
+        self.config['db_path'] = db_path
 
         try:
             asn_src = irnettools.config.ASN_SRC
@@ -51,7 +57,6 @@ class Lookup:
         if country_src not in ['cymru', 'maxmind']:
             raise irnettools.errors.ConfigError('Invalid value for COUNTRY_SRC in config.py')
 
-        self.config = {}
         self.config['asn_src'] = asn_src
         self.config['org_src'] = org_src
         self.config['country_src'] = country_src
@@ -59,10 +64,8 @@ class Lookup:
         if asn_src == 'maxmind' or org_src == 'maxmind' or country_src == 'maxmind':
             # Maxmind databases required
             self.config['use_maxmind'] = True
-            # Path to databases
-            self.config['db_path'] = os.path.abspath(os.path.join(irnettools.config.DATABASES, ''))
             # Location of MaxMind GeoLite2 database files
-            mm_path = os.path.abspath(os.path.join(self.config['db_path'], 'maxmind'))
+            mm_path = os.path.join(self.config['db_path'], 'maxmind')
             self.config['maxmind_country_database'] = os.path.join(mm_path, 'GeoLite2-Country.mmdb')
             self.config['maxmind_asn_database'] = os.path.join(mm_path, 'GeoLite2-ASN.mmdb')
         else:

@@ -1,7 +1,8 @@
 #! /bin/bash
 PATH=/bin:/usr/bin
 
-DATABASES="./databases"
+# Location of databases, e.g. Maxmind
+DATABASES="~/irnettools-databases"
 
 ###################################
 ### NO USER CONFIGURATION BELOW ###
@@ -11,8 +12,6 @@ DATABASES="./databases"
 
 MAXMIND_COUNTRY_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
 MAXMIND_ASN_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
-MAXMIND_COUNTRY_FILE="${DATABASES}/maxmind/GeoLite2-Country.mmdb"
-MAXMIND_ASN_FILE="${DATABASES}/maxmind/GeoLite2-ASN.mmdb"
 
 abspath()
 {
@@ -29,11 +28,15 @@ fail()
 
 which wget >/dev/null 2>&1 || fail "wget not installed. Please install it."
 
-TMP_DIR=`mktemp -d`
-DB_DIR="${DATABASES}/maxmind/"
-[ -d "$DB_DIR" ] || mkdir -p "$DB_DIR"
+DB_PATH=`echo $DATABASES | sed -e "s|^~/|$HOME/|"`
+MM_DIR="$DB_PATH/maxmind"
+MAXMIND_COUNTRY_FILE="$MM_DIR/GeoLite2-Country.mmdb"
+MAXMIND_ASN_FILE="$MM_DIR/GeoLite2-ASN.mmdb"
 
-echo "Updating databases in $DATABASES"
+TMP_DIR=`mktemp -d`
+[ -d "$MM_DIR" ] || mkdir -p "$MM_DIR"
+
+echo "Updating databases in $DB_PATH"
 echo "Updating Maxmind GeoLite2 Country database."
 wget -q -O "$TMP_DIR/country.tgz" "$MAXMIND_COUNTRY_URL"
 [ $? -gt 0 ] && fail "Downloading database failed"
@@ -48,4 +51,5 @@ tar xzf "$TMP_DIR/asn.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
 [ $? -gt 0 ] && fail "Unpacking database failed"
 mv -f `find "$TMP_DIR/" -name GeoLite2-ASN.mmdb` "$MAXMIND_ASN_FILE"
 
+rm -rf "$TMP_DIR"
 #
