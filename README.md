@@ -58,9 +58,11 @@ the IP address and corresponding hostname along with AS number,
 organization and country information in CSV format.
 
     $ hostinfo smtp.gmx.de
+    "ip","hostname","asn","org","country"
     "212.227.17.168","smtp.gmx.de","8560","1&1 Internet SE","DE"
 
     $ hostinfo 216.58.213.195
+    "ip","hostname","asn","org","country"
     "216.58.213.195","ham02s15-in-f195.1e100.net","15169","Google LLC","US"
 
     $ hostinfo -f sample-hosts.txt
@@ -123,8 +125,8 @@ Configuration is done in `irnettools/config.py`.
 | --- | --- |
 | `DATABASES` | Path to databases. If not set, defaults to `USER_BASE/share/irnettools/databases/` |
 | `ASN_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
-| `ORG_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
-| `COUNTRY_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
+| `ORG_SRC` | Data source for organization lookups: `cymru` or `maxmind` |
+| `COUNTRY_SRC` | Data source for country lookups: `cymru` or `maxmind` |
 
 ## Databases
 
