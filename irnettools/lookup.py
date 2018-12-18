@@ -9,6 +9,7 @@ Licensed under GNU Affero General Public License v3.0
 
 import os
 import sys
+import site
 import irnettools.errors
 import irnettools.config
 import irnettools.dns
@@ -23,10 +24,11 @@ class Lookup:
 
         try:
             db = irnettools.config.DATABASES
+            db_path = os.path.abspath(os.path.join(os.path.expandvars(os.path.expanduser(db)), ''))
         except AttributeError:
-            raise irnettools.errors.ConfigError('DATABASES not defined in config.py')
+            # DATABASES not defined, use default
+            db_path = os.path.join(site.USER_BASE, 'share/irnettools/databases')
 
-        db_path = os.path.abspath(os.path.join(os.path.expandvars(os.path.expanduser(db)), ''))
         try:
             if not os.path.isdir(db_path):
                 raise irnettools.errors.ConfigError('DATABASES directory \'' + db_path + '\' does not exist. Check config.py.')

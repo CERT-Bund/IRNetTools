@@ -121,7 +121,7 @@ Configuration is done in `irnettools/config.py`.
 
 | Variable | Value |
 | --- | --- |
-| `DATABASES` | Path to databases (e.g. Maxmind) |
+| `DATABASES` | Path to databases. If not set, defaults to `USER_BASE/share/irnettools/databases/` |
 | `ASN_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
 | `ORG_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
 | `COUNTRY_SRC` | Data source for ASN lookups: `cymru` or `maxmind` |
@@ -132,11 +132,27 @@ IRNetTools uses Maxmind GeoLite2 databases for ASN, organization and country loo
 
 Run `update-irnettools-databases` to install/update the databases.
 
-By default, databases are stored in `~/irnettools-databases`.
-To change the location of the databases, modify variable `DATABASES`
+By default, databases are stored in `USER_BASE/share/irnettools/databases/`.
+To change the location of the databases, set variable `DATABASES`
 in `bin/update-irnettools-databases` and `irnettools/config.py`.
 
-## Installation in a Python virtual env
+## Installation
+
+### Installation in user's home
+
+Install IRNetTools from github
+
+    $ pip3 install --user https://github.com/cert-bund/irnettools/archive/master.zip
+
+Add the following lines to your shell startup file (e.g. `~/.bashrc` or `~/.profile`)
+
+    export PY_USER_BIN=$(python -c 'import site; print(site.USER_BASE + "/bin")')
+    export PATH=$PATH:$PY_USER_BIN
+
+Re-read the shell startup file (e.g. `source ~/.bashrc`) and run
+`update-irnettools-databases` to download and install databases.
+
+### Installation in a Python virtual environment
 
     $ python3 -m venv irnettools
     $ cd irnettools

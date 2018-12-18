@@ -1,14 +1,14 @@
 #! /bin/bash
 PATH=/bin:/usr/bin
 
-# Location of databases, e.g. Maxmind
-DATABASES="~/irnettools-databases"
+# Location of databases (e.g. Maxmind)
+# If not set, defaults to USER_BASE/share/irnettools/databases/
+#DATABASES="~/irnettools-databases"
+
 
 ###################################
 ### NO USER CONFIGURATION BELOW ###
 ###################################
-
-#DATABASES=`python3 -c 'from irnettools import config; print(config.db_path)'`
 
 MAXMIND_COUNTRY_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
 MAXMIND_ASN_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
@@ -26,12 +26,21 @@ fail()
     exit 1
 }
 
+if [ -z "$DATABASES" ]; then
+    # DATABASES not defined, use default
+    PY_USER_BASE=$(python -c 'import site; print(site.USER_BASE)')
+    [ -z "$PY_USER_BASE" ] && fail "Error: Could not determine Python USER_BASE"
+    DB_PATH="${PY_USER_BASE}/share/irnettools/databases"
+else
+    DB_PATH=`echo $DATABASES | sed -e "s|^~/|$HOME/|"`
+fi
+
+# Check if wget installed
 which wget >/dev/null 2>&1 || fail "wget not installed. Please install it."
 
-DB_PATH=`echo $DATABASES | sed -e "s|^~/|$HOME/|"`
-MM_DIR="$DB_PATH/maxmind"
-MAXMIND_COUNTRY_FILE="$MM_DIR/GeoLite2-Country.mmdb"
-MAXMIND_ASN_FILE="$MM_DIR/GeoLite2-ASN.mmdb"
+MM_DIR="${DB_PATH}/maxmind"
+MAXMIND_COUNTRY_FILE="${MM_DIR}/GeoLite2-Country.mmdb"
+MAXMIND_ASN_FILE="${MM_DIR}/GeoLite2-ASN.mmdb"
 
 TMP_DIR=`mktemp -d`
 [ -d "$MM_DIR" ] || mkdir -p "$MM_DIR"
