@@ -54,9 +54,13 @@ if __name__ == '__main__':
                         if not args.c:
                             output.writerow(row + ['asn', 'org', 'country'])
                 else:
+                    if not row:
+                        # skip empty line in csv input file
+                        continue
                     try:
                         ip = row[ippos]
                     except IndexError:
+                        print('Invalid data in line %d' % idx, file=sys.stderr)
                         continue
                     if not irnettools.validate.ip(ip):
                         print('Invalid IP in line %d' % idx, file=sys.stderr)
