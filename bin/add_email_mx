@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""add_email_mx
+
+Copyright (c) 2019 Thomas Hungenberg
+
+Licensed under GNU Affero General Public License v3.0
+<http://www.gnu.org/licenses/agpl-3.0.html>
+
+This script takes a CSV file with column "email" and arbitrary
+additional columns as input and returns each row with the
+IP and hostname of the corresponding MX with lowest preference
+(= highest priority) added.
+
+Output is printed to stdout, errors to stderr.
+"""
+
+import argparse
+import io
+import sys
+import re
+import csv
+import irnettools.validate
+import irnettools.errors
+import irnettools.lookup
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
+                                     description='Add IP and hostname of corresponding MX for email addresses to CSV file.')
+    parser.add_argument('filename', nargs=1, help='CSV file with column \'email\'. Use \'-\' as filename to read from stdin.')
+    parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    parser.add_argument('-v', '--version', action='version',
+                        version='IRNetTools %(prog)s version {}'.format(irnettools.version),
+                        help='show the version number and exit')
+    args = parser.parse_args()
+
+    try:
+        lookup = irnettools.lookup.Lookup()
+    except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
+        print('Error: ' + str(e), file=sys.stderr)
+        exit(1)
+
+    try:
+        with io.open(args.filename[0], 'r') if args.filename[0] is not "-" else sys.stdin as infile:
+            content = csv.reader(infile, delimiter=',', quotechar='"')
+            output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            for idx, row in enumerate(content):
+                if idx == 0:
+                    emailcount = row.count("email")
+                    if emailcount != 1:
+                        print('Error: No or multiple columns "email" in input file', file=sys.stderr)
+                        exit(1)
+                    else:
+                        emailpos = row.index("email")
+                        if not args.c:
+                            output.writerow(['ip', 'mx'] + row)
+                else:
+                    if not row:
+                        # skip empty line in csv input file
+                        continue
+                    try:
+                        email = row[emailpos]
+                    except IndexError:
+                        print('Invalid data in line %d' % idx, file=sys.stderr)
+                        continue
+
+                    # check if email address is valid
+                    if not irnettools.validate.email(email):
+                        print('Invalid email address \'%s\' in line %d.' % (email, idx), file=sys.stderr)
+                        continue
+
+                    emailhostname = email.rsplit('@')[1]
+                    # check if email hostname is a fqdn
+                    if not irnettools.validate.fqdn(emailhostname):
+                        print('Not a fully qualified domain name \'%s\' in line %d.' % (emailhostname, idx), file=sys.stderr)
+                        continue
+                
+                    # get MX for email hostname
+                    try:
+                        mx = lookup.mx(emailhostname)
+                    except irnettools.errors.DNSFatalError as e:
+                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
+                        exit(1)
+                    except irnettools.errors.DNSError as e:
+                        print('Error: ' + str(e), file=sys.stderr)
+                        continue
+
+                    if mx:
+                        out = [mx] + row
+
+                        # get IP address for MX
+                        try:
+                            ip = lookup.ip(mx)
+                        except irnettools.errors.DNSFatalError as e:
+                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
+                            exit(1)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: ' + str(e), file=sys.stderr)
+                            continue
+                            
+                        if ip:
+                            out = [ip] + out
+                        else:
+                            print ('MX hostname \'%s\' does not resolve' % mx, file=sys.stderr)
+                            out = [''] + out
+
+                    else:
+                        print('No MX for \'%s\'' % emailhostname, file=sys.stderr)
+                        out = ['', ''] + row
+
+                    output.writerow(out)
+
+    except IOError:
+        print("Error: Unable to open CSV input file")
+        exit(1)
+
+#

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """hostinfo
 
-Copyright (c) 2018 Thomas Hungenberg
+Copyright (c) 2018-2019 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             ip = args.host
             try:
                 hostname = lookup.hostname(ip)
-            except irnettools.errors.DNSError as e:
+            except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
                 print('Error: ' + str(e), file=sys.stderr)
                 exit(1)
             if not hostname:
@@ -67,7 +67,7 @@ if __name__ == '__main__':
             hostname = args.host
             try:
                 ip = lookup.ip(hostname)
-            except irnettools.errors.DNSError as e:
+            except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
                 print('Error: ' + str(e), file=sys.stderr)
                 exit(1)
 
@@ -109,21 +109,30 @@ if __name__ == '__main__':
                     if irnettools.validate.ip(host):
                         ip = host
                         try:
+                            # get reverse hostname
                             hostname = lookup.hostname(host)
+                        except irnettools.errors.DNSFatalError as e:
+                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
+                            exit(1)
                         except irnettools.errors.DNSError as e:
                             print('Error: ' + str(e), file=sys.stderr)
-                            exit(1)
+
                         if not hostname:
+                            print('No reverse lookup available for IP %s' % ip, file=sys.stderr)
                             hostname = ''
             
                     # check if input is a valid hostname
                     elif irnettools.validate.hostname(host):
                         hostname = host
                         try:
+                            # get IP
                             ip = lookup.ip(hostname)
+                        except irnettools.errors.DNSFatalError as e:
+                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
+                            exit(1)
                         except irnettools.errors.DNSError as e:
                             print('Error: ' + str(e), file=sys.stderr)
-                            exit(1)
+
                         if not ip:
                             print('Hostname does not resolve: ' + hostname, file=sys.stderr)
                             continue

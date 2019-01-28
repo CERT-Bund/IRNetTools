@@ -2,7 +2,7 @@
 This module provides a class for performing various
 DNS lookups with caching of results for speedup.
 
-Copyright (c) 2018 Thomas Hungenberg
+Copyright (c) 2018-2019 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
@@ -28,6 +28,7 @@ class Lookup:
 
         self.config = config
         self.resolver = dns.resolver.Resolver()
+        self.resolver.timeout = self.resolver.lifetime = 10.0
         self.hosttoipv4cache = {}
         self.hosttoipv6cache = {}
         self.iptohostcache = {}
@@ -57,9 +58,12 @@ class Lookup:
                 # hostname does not resolve
                 self.hosttoipv4cache[hostname] = None
                 return None
-            except dns.resolver.NoNameservers as e:
+            except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
+                raise irnettools.errors.DNSFatalError('No nameservers available')
+            except dns.exception.Timeout:
+                # Nameserver timeout
+                raise irnettools.errors.DNSError('Nameserver timeout')
 
     def ipv6(self, hostname):
         """
@@ -85,9 +89,12 @@ class Lookup:
                 # hostname does not resolve
                 self.hosttoipv6cache[hostname] = None
                 return None
-            except dns.resolver.NoNameservers as e:
+            except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
+                raise irnettools.errors.DNSFatalError('No nameservers available')
+            except dns.exception.Timeout:
+                # Nameserver timeout
+                raise irnettools.errors.DNSError('Nameserver timeout')
 
     def ip(self, hostname):
         """
@@ -124,9 +131,12 @@ class Lookup:
                 # hostname does not resolve
                 self.iptohostcache[ip] = None
                 return None
-            except dns.resolver.NoNameservers as e:
+            except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
+                raise irnettools.errors.DNSFatalError('No nameservers available')
+            except dns.exception.Timeout:
+                # Nameserver timeout
+                raise irnettools.errors.DNSError('Nameserver timeout')
 
     def mx(self, hostname):
         """
@@ -155,8 +165,11 @@ class Lookup:
                 # No MX configured
                 self.hosttomxcache[hostname] = None
                 return None
-            except dns.resolver.NoNameservers as e:
+            except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
+                raise irnettools.errors.DNSFatalError('No nameservers available')
+            except dns.exception.Timeout:
+                # Nameserver timeout
+                raise irnettools.errors.DNSError('Nameserver timeout')
 
 #

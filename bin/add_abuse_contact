@@ -66,7 +66,7 @@ if __name__ == '__main__':
                         continue
                     try:
                         abusecontact = lookup.abuse_contact(ip)
-                    except irnettools.errors.DNSError as e:
+                    except irnettools.errors.DNSFatalError as e:
                         print('Error: ' + str(e), file=sys.stderr)
                         exit(1)
                         
@@ -74,6 +74,7 @@ if __name__ == '__main__':
                         out = row + [abusecontact]
                     else:
                         out = row + ['']
+
                     output.writerow(out)
                 
     except IOError:

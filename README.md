@@ -50,6 +50,24 @@ information for the respective IP address added.
     "2018-11-20 21:57:56","79.208.10.20","Malware_XYZ","3320","Deutsche Telekom AG","DE"
     "2018-11-20 23:24:56","2001:470:1:18::125","Malware_456","6939","Hurricane Electric LLC","US"
 
+### add_email_mx
+
+Takes a CSV file with column 'email' and arbitrary additional columns
+as input and returns each row with the IP address and hostname of the
+corresponding MX with lowest preference (highest priority) added.
+
+    $ cat sample-email.csv
+    "email","count"
+    "lieschen.mueller@gmx.de","5"
+    "max.mustermann@gmail.com","10"
+    "alice.wonderland@yahoo.com","15"
+
+    $ add_email_mx sample-email.csv
+    "ip","mx","email","count"
+    "212.227.15.9","mx00.emig.gmx.net","lieschen.mueller@gmx.de","5"
+    "108.177.15.26","gmail-smtp-in.l.google.com","max.mustermann@gmail.com","10"
+    "98.136.102.54","mta7.am0.yahoodns.net","alice.wonderland@yahoo.com","15"
+
 ### hostinfo
 
 Takes a single hostname/IP address or a file containing a list of

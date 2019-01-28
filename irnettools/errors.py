@@ -1,7 +1,7 @@
 """
 Custom errors for IRNetTools
 
-Copyright (c) 2018 Thomas Hungenberg
+Copyright (c) 2018-2019 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
@@ -17,6 +17,10 @@ class ConfigError(Error):
 
 class DNSError(Error):
     """Exception raised for DNS errors."""
+    pass
+
+class DNSFatalError(Error):
+    """Exception raised for fatal DNS errors (e.g. no nameservers available)."""
     pass
 
 class InvalidHostnameError(Error):

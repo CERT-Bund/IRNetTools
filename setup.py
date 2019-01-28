@@ -25,6 +25,7 @@ setuptools.setup(
     python_requires = '>=3.5',
     scripts = ['bin/add_abuse_contact',
                'bin/add_asgeo',
+               'bin/add_email_mx',
                'bin/hostinfo',
                'bin/process_urls',
                'bin/process_email_credentials',

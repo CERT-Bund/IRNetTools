@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Process URLs
 
-Copyright (c) 2018 Thomas Hungenberg
+Copyright (c) 2018-2019 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
@@ -63,20 +63,19 @@ if __name__ == '__main__':
                     else:
                         path = ''
                 except:
-                    print('Invalid record in line', linenumber, file=sys.stderr)
+                    print('Invalid record in line %d' % linenumber, file=sys.stderr)
                     continue
 
-                # check if host is a valid hostname or IP
                 if irnettools.validate.hostname(host):
                     # valid hostname
                     try:
                         ip = lookup.ip(host)
-                    except irnettools.errors.DNSError as e:
-                        print('Error: ' + str(e), file=sys.stderr)
+                    except irnettools.errors.DNSFatalError as e:
+                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
                         exit(1)
 
                     if not ip:
-                        print('Hostname', host, 'does not resolve', file=sys.stderr)
+                        print('Hostname \'%s\' does not resolve' % host, file=sys.stderr)
                         continue
 
                 elif irnettools.validate.ip(host):
