@@ -64,17 +64,14 @@ if __name__ == '__main__':
                     if not irnettools.validate.ip(ip):
                         print('Invalid IP in line %d' % idx, file=sys.stderr)
                         continue
+
+                    abusecontact = ''
                     try:
                         abusecontact = lookup.abuse_contact(ip)
-                    except irnettools.errors.DNSFatalError as e:
+                    except irnettools.errors.DNSError as e:
                         print('Error: ' + str(e), file=sys.stderr)
-                        exit(1)
                         
-                    if abusecontact:
-                        out = row + [abusecontact]
-                    else:
-                        out = row + ['']
-
+                    out = row + [abusecontact]
                     output.writerow(out)
                 
     except IOError:

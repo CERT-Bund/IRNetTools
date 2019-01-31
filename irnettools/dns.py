@@ -60,7 +60,7 @@ class Lookup:
                 return None
             except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSFatalError('No nameservers available')
+                raise irnettools.errors.DNSError('No nameservers available')
             except dns.exception.Timeout:
                 # Nameserver timeout
                 raise irnettools.errors.DNSError('Nameserver timeout')
@@ -91,7 +91,7 @@ class Lookup:
                 return None
             except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSFatalError('No nameservers available')
+                raise irnettools.errors.DNSError('No nameservers available')
             except dns.exception.Timeout:
                 # Nameserver timeout
                 raise irnettools.errors.DNSError('Nameserver timeout')
@@ -133,7 +133,7 @@ class Lookup:
                 return None
             except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSFatalError('No nameservers available')
+                raise irnettools.errors.DNSError('No nameservers available')
             except dns.exception.Timeout:
                 # Nameserver timeout
                 raise irnettools.errors.DNSError('Nameserver timeout')
@@ -167,7 +167,7 @@ class Lookup:
                 return None
             except dns.resolver.NoNameservers:
                 # No nameserver
-                raise irnettools.errors.DNSFatalError('No nameservers available')
+                raise irnettools.errors.DNSError('No nameservers available')
             except dns.exception.Timeout:
                 # Nameserver timeout
                 raise irnettools.errors.DNSError('Nameserver timeout')

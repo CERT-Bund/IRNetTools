@@ -108,7 +108,7 @@ class Lookup:
             return
         except dns.resolver.NoNameservers as e:
             # No nameserver
-            raise irnettools.errors.DNSFatalError('No nameservers available')
+            raise irnettools.errors.DNSError('No nameservers available')
 
         queryname = 'AS' + self.iptoasncache[ip]  + ".asn.cymru.com"
         try:
@@ -125,6 +125,6 @@ class Lookup:
             self.iptoorgcache[ip] = ''
         except dns.resolver.NoNameservers as e:
             # No nameserver
-            raise irnettools.errors.DNSFatalError('No nameservers available')
+            raise irnettools.errors.DNSError('No nameservers available')
             
 #

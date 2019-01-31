@@ -19,10 +19,6 @@ class DNSError(Error):
     """Exception raised for DNS errors."""
     pass
 
-class DNSFatalError(Error):
-    """Exception raised for fatal DNS errors (e.g. no nameservers available)."""
-    pass
-
 class InvalidHostnameError(Error):
     """Exception raised for invalid hostnames."""
     pass

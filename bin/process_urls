@@ -21,6 +21,7 @@ import argparse
 import io
 import sys
 import re
+import csv
 import irnettools.validate
 import irnettools.lookup
 import urllib.request
@@ -45,14 +46,22 @@ if __name__ == '__main__':
 
     try:
         with io.open(args.filename[0], 'r') as urlfile:
+            output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
             linenumber = 0
             if not args.c:
-                header = '"ip","url"'
+                header = ['ip', 'url']
                 if args.n:
-                    header = header + ',"http_status"'
-                print(header)
+                    header = header + ['http_status']
+                output.writerow(header)
             for line in urlfile:
                 linenumber += 1
+                ip = None
+                status = None
+
+                if re.match("^\s*$", line):
+                    # skip lines that are empty or only containing blanks
+                    continue
+
                 try:
                     # split record into protocol, host and path
                     m = re.match("^([a-zA-Z]+)(:\/\/)([^\/]+)(\/[\x20-\x7f]*)?$", line.strip())
@@ -70,13 +79,11 @@ if __name__ == '__main__':
                     # valid hostname
                     try:
                         ip = lookup.ip(host)
-                    except irnettools.errors.DNSFatalError as e:
-                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                        exit(1)
+                    except irnettools.errors.DNSError as e:
+                        print('Error: %s' % str(e), file=sys.stderr)
 
                     if not ip:
                         print('Hostname \'%s\' does not resolve' % host, file=sys.stderr)
-                        continue
 
                 elif irnettools.validate.ip(host):
                     # valid IP
@@ -84,29 +91,36 @@ if __name__ == '__main__':
 
                 else:
                     print('Neither valid hostname nor IP address in line %d.' % linenumber, file=sys.stderr)
-                    continue
 
                 url = proto + "://" + host + path
-                if args.n:
-                    status = None
-                    if re.match('^https?$', proto):
+
+                if ip:
+                    # check HTTP status code
+                    if args.n and ip and re.match('^https?$', proto):
                         try:
-                            status = urllib.request.urlopen(url).getcode()
-                        except:
-                            pass
+                            status = urllib.request.urlopen(url, timeout=10).getcode()
+                        except urllib.error.HTTPError as e:
+                            status = e.code
+                        except urllib.error.URLError as e:
+                            print("Error connecting to %s" % host,  file=sys.stderr)
+                        except Exception as e:
+                            print("Error: %s" % str(e),  file=sys.stderr)
+                            status = ""
+                else:
+                    ip = ""
 
                 if args.s:
                     # sanitize url
                     url = proto + "://" + host.replace(".", "[.]") + path
 
-                output = '"%s","%s"' % (ip, url)
+                row = [ip, url]
                 if args.n:
                     if status:
-                        output = output + ',"%d"' % status
+                        row = row + [status]
                     else:
-                        output = output + ',""'
+                        row = row + ['']
 
-                print(output)
+                output.writerow(row)
 
         exit(0)
 

@@ -75,27 +75,21 @@ if __name__ == '__main__':
                         continue
                 
                     # get MX for email hostname
+                    mx = None
                     try:
                         mx = lookup.mx(emailhostname)
-                    except irnettools.errors.DNSFatalError as e:
-                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                        exit(1)
                     except irnettools.errors.DNSError as e:
                         print('Error: ' + str(e), file=sys.stderr)
-                        continue
 
                     if mx:
                         out = [mx] + row
 
                         # get IP address for MX
+                        ip = None
                         try:
                             ip = lookup.ip(mx)
-                        except irnettools.errors.DNSFatalError as e:
-                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                            exit(1)
                         except irnettools.errors.DNSError as e:
-                            print('Error: ' + str(e), file=sys.stderr)
-                            continue
+                            print('Error: %s' % str(e), file=sys.stderr)
                             
                         if ip:
                             out = [ip] + out

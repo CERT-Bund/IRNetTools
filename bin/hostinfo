@@ -21,9 +21,61 @@ import argparse
 import sys
 import io
 import re
+import csv
 import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
+
+def hostinfo(host):
+    # check if input is a valid IP address
+    if irnettools.validate.ip(host):
+        ip = host
+        hostname = ''
+        try:
+            hostname = lookup.hostname(ip)
+        except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
+            print('Error: %s' % str(e), file=sys.stderr)
+
+    # check if input is a valid hostname
+    elif irnettools.validate.hostname(host):
+        hostname = host
+        ip = None
+        try:
+            ip = lookup.ip(host)
+        except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
+            print('Error: %s' % str(e), file=sys.stderr)
+        if not ip:
+            print('Hostname does not resolve: %s' % host, file=sys.stderr)
+            return None
+
+    else:
+        print('Not a valid IP address nor a valid hostname: %s' % host, file=sys.stderr)
+        return None
+
+    info = [ip, hostname]
+    # get ASN, organization and country for IP
+    asn = ''
+    try:
+        asn = lookup.asn(ip)
+    except irnettools.errors.DNSError as e:
+        print('Error: %s' % str(e), file=sys.stderr)
+    info = info + [asn]
+
+    organization = ''
+    try:
+        organization = lookup.organization(ip)
+    except irnettools.errors.DNSError as e:
+        print('Error: %s' % str(e), file=sys.stderr)
+        info = info + [organization]
+
+    country = ''
+    try:
+        country = lookup.country(ip)
+    except irnettools.errors.DNSError as e:
+        print('Error: %s' % str(e), file=sys.stderr)
+    info = info + [country]
+
+    return info
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <host> | -f <filename>',
@@ -39,10 +91,12 @@ if __name__ == '__main__':
                        help='show the version number and exit')
     args = parser.parse_args()
 
+    output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: ' + str(e), file=sys.stderr)
+        print('Error: %s' % str(e), file=sys.stderr)
         exit(1)
 
     if (args.host and args.f) or (not args.host and not args.f):
@@ -50,49 +104,11 @@ if __name__ == '__main__':
         exit(0)
     elif (args.host):
         # single hostname/IP
-
-        # check if input is a valid IP address
-        if irnettools.validate.ip(args.host):
-            ip = args.host
-            try:
-                hostname = lookup.hostname(ip)
-            except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
-                print('Error: ' + str(e), file=sys.stderr)
-                exit(1)
-            if not hostname:
-                hostname = ''
-            
-        # check if input is a valid hostname
-        elif irnettools.validate.hostname(args.host):
-            hostname = args.host
-            try:
-                ip = lookup.ip(hostname)
-            except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
-                print('Error: ' + str(e), file=sys.stderr)
-                exit(1)
-
-            if not ip:
-                print('Hostname does not resolve: ' + hostname, file=sys.stderr)
-                exit(1)
-        else:
-            print('Not a valid IP address nor a valid hostname: %s' % args.host, file=sys.stderr)
-            exit(1)
-
-        if ip:
-            # get ASN, organization and country for IP
-            asn = lookup.asn(ip)
-            if not asn:
-                asn = ''
-            org = lookup.organization(ip)
-            if not org:
-                org = ''
-            country = lookup.country(ip)
-            if not country:
-                country = ''
-
+        info = hostinfo(args.host)
+        if info:
             if not args.c:
-                print('"ip","hostname","asn","org","country"')
-            print('"%s","%s","%s","%s","%s"' % (ip, hostname, asn, org, country))
+                output.writerow(['ip','hostname','asn','org','country'])
+            output.writerow(info)
 
     elif (args.f):
         # filename
@@ -100,58 +116,17 @@ if __name__ == '__main__':
             with io.open(args.f, 'r') as ipfile:
                 linenumber = 0
                 if not args.c:
-                    print('"ip","hostname","asn","org","country"')
+                    output.writerow(['ip','hostname','asn','org','country'])
                 for line in ipfile:
+                    asn = None
+                    organization = None
+                    country = None
                     linenumber += 1
                     host = line.strip()
+                    info = hostinfo(host)
+                    if info:
+                        output.writerow(info)
 
-                    # check if input is a valid IP address
-                    if irnettools.validate.ip(host):
-                        ip = host
-                        try:
-                            # get reverse hostname
-                            hostname = lookup.hostname(host)
-                        except irnettools.errors.DNSFatalError as e:
-                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                            exit(1)
-                        except irnettools.errors.DNSError as e:
-                            print('Error: ' + str(e), file=sys.stderr)
-
-                        if not hostname:
-                            print('No reverse lookup available for IP %s' % ip, file=sys.stderr)
-                            hostname = ''
-            
-                    # check if input is a valid hostname
-                    elif irnettools.validate.hostname(host):
-                        hostname = host
-                        try:
-                            # get IP
-                            ip = lookup.ip(hostname)
-                        except irnettools.errors.DNSFatalError as e:
-                            print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                            exit(1)
-                        except irnettools.errors.DNSError as e:
-                            print('Error: ' + str(e), file=sys.stderr)
-
-                        if not ip:
-                            print('Hostname does not resolve: ' + hostname, file=sys.stderr)
-                            continue
-                    else:
-                        print('Not a valid IP address nor a valid hostname in line %d: %s' % (linenumber, args.host), file=sys.stderr)
-                        continue
-
-                    # get ASN, organization and country for IP
-                    asn = lookup.asn(ip)
-                    if not asn:
-                        asn = ''
-                    org = lookup.organization(ip)
-                    if not org:
-                        org = ''
-                    country = lookup.country(ip)
-                    if not country:
-                        country = ''
-                    print('"%s","%s","%s","%s","%s"' % (ip, hostname, asn, org, country))
-            
         except IOError:
             print("Unable to open input file")
             exit(1)

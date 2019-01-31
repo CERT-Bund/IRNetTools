@@ -66,35 +66,27 @@ if __name__ == '__main__':
                         print('Invalid IP in line %d' % idx, file=sys.stderr)
                         continue
 
+                    asn = ''
                     try:
                         asn = lookup.asn(ip)
-                    except irnettools.errors.DNSFatalError as e:
-                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                        exit(1)
-                    if asn:
-                        out = row + [asn]
-                    else:
-                        out = row + ['']
+                    except irnettools.errors.DNSError as e:
+                        print('Error: %s' % str(e), file=sys.stderr)
+                    out = row + [asn]
 
+                    organization = ''
                     try:
                         organization = lookup.organization(ip)
-                    except irnettools.errors.DNSFatalError as e:
-                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                        exit(1)
-                    if organization:
-                        out = out + [organization]
-                    else:
-                        out = out + ['']
+                    except irnettools.errors.DNSError as e:
+                        print('Error: %s' % str(e), file=sys.stderr)
+                    out = out + [organization]
 
+                    country = ''
                     try:
                         country = lookup.country(ip)
-                    except irnettools.errors.DNSFatalError as e:
-                        print('Fatal error: %s. Exiting.' % str(e), file=sys.stderr)
-                        exit(1)
-                    if country:
-                        out = out + [country]
-                    else:
-                        out = out + ['']
+                    except irnettools.errors.DNSError as e:
+                        print('Error: %s' % str(e), file=sys.stderr)
+                    out = out + [country]
+
                     output.writerow(out)
                 
     except IOError:
