@@ -58,7 +58,7 @@ if __name__ == '__main__':
                         # skip empty line in csv input file
                         continue
                     try:
-                        email = row[emailpos]
+                        email = row[emailpos].strip()
                     except IndexError:
                         print('Invalid data in line %d' % idx, file=sys.stderr)
                         continue
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                         print('Error: ' + str(e), file=sys.stderr)
 
                     if mx:
-                        out = [mx] + row
+                        out = [mx] + [email]
 
                         # get IP address for MX
                         ip = None

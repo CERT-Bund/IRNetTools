@@ -104,7 +104,7 @@ if __name__ == '__main__':
         exit(0)
     elif (args.host):
         # single hostname/IP
-        info = hostinfo(args.host)
+        info = hostinfo(args.host.strip())
         if info:
             if not args.c:
                 output.writerow(['ip','hostname','asn','org','country'])
