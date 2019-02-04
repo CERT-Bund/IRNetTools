@@ -22,12 +22,14 @@ import csv
 import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
+import irnettools.progress
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
                                      description='Add ASN, organization and country information for IP addresses to CSV file.')
     parser.add_argument('filename', nargs=1, help='CSV file with column \'ip\'. Use \'-\' as filename to read from stdin.')
     parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    parser.add_argument('-p', action='store_true', help='show progress information')
     parser.add_argument('-v', '--version', action='version',
                         version='IRNetTools %(prog)s version {}'.format(irnettools.version),
                         help='show the version number and exit')
@@ -36,14 +38,24 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: ' + str(e), file=sys.stderr)
+        print('Error: %s' % str(e), file=sys.stderr)
         exit(1)
+
+    if args.p:
+        try:
+            progress = irnettools.progress.Progress(args.filename[0])
+        except irnettools.errors.ProgressError as e:
+            print('Error: %s' % str(e), file=sys.stderr)
+            exit(1)
 
     try:
         with io.open(args.filename[0], 'r') if args.filename[0] is not "-" else sys.stdin as infile:
             content = csv.reader(infile, delimiter=',', quotechar='"')
             output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
             for idx, row in enumerate(content):
+                if args.p:
+                    progress.next()
+
                 if idx == 0:
                     ipcount = row.count("ip")
                     if ipcount != 1:

@@ -25,6 +25,7 @@ import csv
 import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
+import irnettools.progress
 
 def hostinfo(host):
     # check if input is a valid IP address
@@ -84,8 +85,9 @@ if __name__ == '__main__':
                                      -f <filename> to process a list of hostnames/IP addresses.')
     group = parser.add_argument_group()
     group.add_argument('host', nargs='?', help='single hostname or IP address')
-    group.add_argument('-f', metavar='filename', help='file containing list of hostnames/IP addresses')
+    group.add_argument('-f', metavar='filename', help='file containing list of hostnames/IP addresses. Use \'-\' as filename to read from stdin.')
     group.add_argument('-c', action='store_true', help='do not add CSV header to output')
+    group.add_argument('-p', action='store_true', help='show progress information')
     group.add_argument('-v', '--version', action='version',
                        version='IRNetTools %(prog)s version {}'.format(irnettools.version),
                        help='show the version number and exit')
@@ -111,13 +113,22 @@ if __name__ == '__main__':
             output.writerow(info)
 
     elif (args.f):
+        if args.p:
+            try:
+                progress = irnettools.progress.Progress(args.f)
+            except irnettools.errors.ProgressError as e:
+                print('Error: %s' % str(e), file=sys.stderr)
+                exit(1)
+
         # filename
         try:
-            with io.open(args.f, 'r') as ipfile:
+            with io.open(args.filename[0], 'r') if args.f is not "-" else sys.stdin as infile:
                 linenumber = 0
                 if not args.c:
                     output.writerow(['ip','hostname','asn','org','country'])
-                for line in ipfile:
+                for line in infile:
+                    if args.p:
+                        progress.next()
                     asn = None
                     organization = None
                     country = None

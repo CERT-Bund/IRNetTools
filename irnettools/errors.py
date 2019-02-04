@@ -34,3 +34,7 @@ class IP2ASNLookupError(Error):
 class MaxmindError(Error):
     """Exception raised for GeoIP related errors."""
     pass
+
+class ProgressError(Error):
+    """Exception raised for Progress related errors."""
+    pass

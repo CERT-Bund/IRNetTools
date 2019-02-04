@@ -23,15 +23,18 @@ import sys
 import re
 import csv
 import irnettools.validate
+import irnettools.errors
 import irnettools.lookup
+import irnettools.progress
 import urllib.request
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s [-acns] <filename>',
                                      description='Process URLs.')
-    parser.add_argument('filename', nargs=1, help='file containing URLs')
+    parser.add_argument('filename', nargs=1, help='file containing URLs. Use \'-\' as filename to read from stdin.')
     parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
     parser.add_argument('-n', action='store_true', help='check HTTP status code for http(s) URLs')
+    parser.add_argument('-p', action='store_true', help='show progress information')
     parser.add_argument('-s', action='store_true', help='sanitize host in output')
     parser.add_argument('-v', '--version', action='version',
                         version='IRNetTools %(prog)s version {}'.format(irnettools.version),
@@ -41,11 +44,18 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: ' + str(e), file=sys.stderr)
+        print('Error: %s' % str(e), file=sys.stderr)
         exit(1)
 
+    if args.p:
+        try:
+            progress = irnettools.progress.Progress(args.filename[0])
+        except irnettools.errors.ProgressError as e:
+            print('Error: %s' % str(e), file=sys.stderr)
+            exit(1)
+
     try:
-        with io.open(args.filename[0], 'r') as urlfile:
+        with io.open(args.filename[0], 'r') if args.filename[0] is not "-" else sys.stdin as urlfile:
             output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
             linenumber = 0
             if not args.c:
@@ -54,6 +64,9 @@ if __name__ == '__main__':
                     header = header + ['http_status']
                 output.writerow(header)
             for line in urlfile:
+                if args.p:
+                    progress.next()
+
                 linenumber += 1
                 ip = None
                 status = None
