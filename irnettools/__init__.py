@@ -6,5 +6,5 @@ Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
 """
 
-version_info = (0, 6, 0)
+version_info = (0, 7, 0)
 version = '.'.join(str(c) for c in version_info)

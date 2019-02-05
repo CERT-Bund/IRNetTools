@@ -26,6 +26,7 @@ setuptools.setup(
     scripts = ['bin/add_abuse_contact',
                'bin/add_asgeo',
                'bin/add_email_mx',
+               'bin/add_host_ip',
                'bin/hostinfo',
                'bin/process_urls',
                'bin/process_email_credentials',

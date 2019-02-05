@@ -34,7 +34,7 @@ def hostinfo(host):
         hostname = ''
         try:
             hostname = lookup.hostname(ip)
-        except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
+        except irnettools.errors.DNSError as e:
             print('Error: %s' % str(e), file=sys.stderr)
 
     # check if input is a valid hostname
@@ -43,7 +43,7 @@ def hostinfo(host):
         ip = None
         try:
             ip = lookup.ip(host)
-        except (irnettools.errors.DNSError, irnettools.errors.DNSError) as e:
+        except irnettools.errors.DNSError as e:
             print('Error: %s' % str(e), file=sys.stderr)
         if not ip:
             print('Hostname does not resolve: %s' % host, file=sys.stderr)

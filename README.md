@@ -50,6 +50,24 @@ information for the respective IP address added.
     "2018-11-20 21:57:56","79.208.10.20","Malware_XYZ","3320","Deutsche Telekom AG","DE"
     "2018-11-20 23:24:56","2001:470:1:18::125","Malware_456","6939","Hurricane Electric LLC","US"
 
+### add_host_ip
+
+Takes a CSV file with column 'hostname' and arbitrary additional columns
+as input and returns each row with the respective IP address added.
+Tries to resolve hostname to IPv4 first, then tries IPv6.
+
+    $ cat sample-hostport.csv
+    "hostname","port"
+    "www.google.com","443"
+    "smtp.gmx.de","25"
+    "ipv6.test-ipv6.com","80"
+
+    $ add_host_ip sample-hostport.csv
+    "ip","hostname","port"
+    "216.58.205.228","www.google.com","443"
+    "212.227.17.168","smtp.gmx.de","25"
+    "2001:470:1:18::119","ipv6.test-ipv6.com","80",""
+
 ### add_email_mx
 
 Takes a CSV file with column 'email' and arbitrary additional columns

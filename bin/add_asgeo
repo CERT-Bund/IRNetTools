@@ -69,37 +69,36 @@ if __name__ == '__main__':
                     if not row:
                         # skip empty line in csv input file
                         continue
+                    ip = ''
+                    asn = ''
+                    organization = ''
+                    country = ''
                     try:
                         ip = row[ippos]
                     except IndexError:
-                        print('Invalid data in line %d' % idx, file=sys.stderr)
+                        print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
                         continue
-                    if not irnettools.validate.ip(ip):
-                        print('Invalid IP in line %d' % idx, file=sys.stderr)
-                        continue
+                    if not ip:
+                        print('Empty IP in line %d' % (idx + 1), file=sys.stderr)
+                    elif not irnettools.validate.ip(ip):
+                        print('Invalid IP in line %d' % (idx + 1), file=sys.stderr)
+                    else:
+                        try:
+                            asn = lookup.asn(ip)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: %s' % str(e), file=sys.stderr)
 
-                    asn = ''
-                    try:
-                        asn = lookup.asn(ip)
-                    except irnettools.errors.DNSError as e:
-                        print('Error: %s' % str(e), file=sys.stderr)
-                    out = row + [asn]
+                        try:
+                            organization = lookup.organization(ip)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: %s' % str(e), file=sys.stderr)
 
-                    organization = ''
-                    try:
-                        organization = lookup.organization(ip)
-                    except irnettools.errors.DNSError as e:
-                        print('Error: %s' % str(e), file=sys.stderr)
-                    out = out + [organization]
+                        try:
+                            country = lookup.country(ip)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: %s' % str(e), file=sys.stderr)
 
-                    country = ''
-                    try:
-                        country = lookup.country(ip)
-                    except irnettools.errors.DNSError as e:
-                        print('Error: %s' % str(e), file=sys.stderr)
-                    out = out + [country]
-
-                    output.writerow(out)
+                    output.writerow(row + [asn,organization,country])
                 
     except IOError:
         print("Error: Unable to open CSV input file")

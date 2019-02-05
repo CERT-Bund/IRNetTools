@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""add_abuse_contact
+"""add_host_ip
 
-Copyright (c) 2018 Thomas Hungenberg
+Copyright (c) 2018-2019 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
 
-This script takes a CSV file with column "ip" and arbitrary
-additional columns as input and returns each row with
-abuse contact information provided by Abusix for the
-respective IP address added.
+This script takes a CSV file with column "hostname" and
+arbitrary additional columns as input and returns each row
+with the respective IP address added.
+Tries to resolve hostname to IPv4 first, then tries IPv6.
 
 Output is printed to stdout, errors to stderr.
 """
@@ -26,8 +26,8 @@ import irnettools.progress
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
-                                     description='Add abuse contact information for IP addresses to CSV file.')
-    parser.add_argument('filename', nargs=1, help='CSV file with column \'ip\'. Use \'-\' as filename to read from stdin.')
+                                     description='Add IP addresses for hostnames to CSV file.')
+    parser.add_argument('filename', nargs=1, help='CSV file with column \'hostname\'. Use \'-\' as filename to read from stdin.')
     parser.add_argument('-c', action='store_true', help='do not add CSV header to output')
     parser.add_argument('-p', action='store_true', help='show progress information')
     parser.add_argument('-v', '--version', action='version',
@@ -57,38 +57,44 @@ if __name__ == '__main__':
                     progress.next()
 
                 if idx == 0:
-                    ipcount = row.count("ip")
-                    if ipcount != 1:
-                        print('Error: No or multiple columns "ip" in input file', file=sys.stderr)
+                    hostnamecount = row.count("hostname")
+                    if hostnamecount != 1:
+                        print('Error: No or multiple columns "hostname" in input file', file=sys.stderr)
                         exit(1)
                     else:
-                        ippos = row.index("ip")
+                        hostnamepos = row.index("hostname")
                         if not args.c:
-                            output.writerow(row + ['abuse_contact'])
+                            output.writerow(['ip'] + row)
                 else:
                     if not row:
                         # skip empty line in csv input file
                         continue
+
+                    ip = ''
                     try:
-                        ip = row[ippos]
+                        hostname = row[hostnamepos]
                     except IndexError:
                         print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
                         continue
-                    if not irnettools.validate.ip(ip):
-                        print('Invalid IP in line %d' % (idx + 1), file=sys.stderr)
-                        continue
+                    if not hostname:
+                        print('Empty hostname in line %d' % (idx + 1), file=sys.stderr)
+                    elif irnettools.validate.ip(hostname):
+                        ip = hostname
+                        print('Hostname already is an IP address in line %d' % (idx + 1), file=sys.stderr)
+                    elif not irnettools.validate.hostname(hostname):
+                        print('Invalid hostname in line %d' % (idx + 1), file=sys.stderr)
+                    else:
+                        try:
+                            ip = lookup.ip(hostname)
+                        except irnettools.errors.DNSError as e:
+                            print('Error: %s' % str(e), file=sys.stderr)
+                        if not ip:
+                            print('Hostname does not resolve: %s' % hostname, file=sys.stderr)
 
-                    abusecontact = ''
-                    try:
-                        abusecontact = lookup.abuse_contact(ip)
-                    except irnettools.errors.DNSError as e:
-                        print('Error: %s' % str(e), file=sys.stderr)
-                        
-                    out = row + [abusecontact]
-                    output.writerow(out)
-                
+                    output.writerow([ip] + row)
+
     except IOError:
-        print("Unable to open input file")
+        print("Error: Unable to open CSV input file")
         exit(1)
 
 #

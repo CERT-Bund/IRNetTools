@@ -72,18 +72,18 @@ if __name__ == '__main__':
                     try:
                         email = row[emailpos].strip()
                     except IndexError:
-                        print('Invalid data in line %d' % idx, file=sys.stderr)
+                        print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
                         continue
 
                     # check if email address is valid
                     if not irnettools.validate.email(email):
-                        print('Invalid email address \'%s\' in line %d.' % (email, idx), file=sys.stderr)
+                        print('Invalid email address \'%s\' in line %d.' % (email, idx + 1), file=sys.stderr)
                         continue
 
                     emailhostname = email.rsplit('@')[1]
                     # check if email hostname is a fqdn
                     if not irnettools.validate.fqdn(emailhostname):
-                        print('Not a fully qualified domain name \'%s\' in line %d.' % (emailhostname, idx), file=sys.stderr)
+                        print('Not a fully qualified domain name \'%s\' in line %d.' % (emailhostname, idx + 1), file=sys.stderr)
                         continue
                 
                     # get MX for email hostname
