@@ -144,14 +144,14 @@ CSV format.
 
 ## Concatenation of tools
 
-`add_abuse_contact` and `add_asgeo` can read CSV data also from stdin,
-so the tools can be concatenated like this:
+All `add_*` tools can read CSV data also from stdin, so they can be
+concatenated like this:
 
-    $ process_email_credentials -s sample-credentials.txt | add_asgeo - | add_abuse_contact -
-    "ip","mx","username","sanitized_password","asn","org","country","abuse_contact"
-    "212.227.17.5","mx01.emig.gmx.net","lieschen.mueller@gmx.de","pa******","8560","1&1 Internet SE","DE","abuse@oneandone.net"
-    "173.194.76.26","gmail-smtp-in.l.google.com","max.mustermann@gmail.com","to******","15169","Google LLC","US","network-abuse@google.com"
-    "74.6.137.65","mta7.am0.yahoodns.net","alice.wonderland@yahoo.com","al******","26101","Yahoo!","US","network-abuse@cc.yahoo-inc.com"
+    $ add_host_ip sample-hostport.csv | add_asgeo - | add_abuse_contact -
+    "ip","hostname","port","asn","org","country","abuse_contact"
+    "172.217.23.132","www.google.com","443","15169","Google LLC","US","network-abuse@google.com"
+    "212.227.17.168","smtp.gmx.de","25","8560","1&1 Internet SE","DE","abuse@oneandone.net"
+    "2001:470:1:18::119","ipv6.test-ipv6.com","80","6939","Hurricane Electric LLC","US","abuse@he.net"
 
 ## Configuration
 
