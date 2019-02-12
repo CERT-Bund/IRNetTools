@@ -23,6 +23,7 @@ import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
+from irnettools.io import printerror
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
@@ -38,14 +39,14 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
         exit(1)
 
     if args.p:
         try:
             progress = irnettools.progress.Progress(args.filename[0])
         except irnettools.errors.ProgressError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
             exit(1)
 
     try:
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                 if idx == 0:
                     emailcount = row.count("email")
                     if emailcount != 1:
-                        print('Error: No or multiple columns "email" in input file', file=sys.stderr)
+                        printerror('No or multiple columns "email" in input file')
                         exit(1)
                     else:
                         emailpos = row.index("email")
@@ -72,18 +73,18 @@ if __name__ == '__main__':
                     try:
                         email = row[emailpos].strip()
                     except IndexError:
-                        print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Invalid data in line %d' % (idx + 1))
                         continue
 
                     # check if email address is valid
                     if not irnettools.validate.email(email):
-                        print('Invalid email address \'%s\' in line %d.' % (email, idx + 1), file=sys.stderr)
+                        printerror('Invalid email address \'%s\' in line %d.' % (email, idx + 1))
                         continue
 
                     emailhostname = email.rsplit('@')[1]
                     # check if email hostname is a fqdn
                     if not irnettools.validate.fqdn(emailhostname):
-                        print('Not a fully qualified domain name \'%s\' in line %d.' % (emailhostname, idx + 1), file=sys.stderr)
+                        printerror('Not a fully qualified domain name \'%s\' in line %d.' % (emailhostname, idx + 1))
                         continue
                 
                     # get MX for email hostname
@@ -91,7 +92,7 @@ if __name__ == '__main__':
                     try:
                         mx = lookup.mx(emailhostname)
                     except irnettools.errors.DNSError as e:
-                        print('Error: ' + str(e), file=sys.stderr)
+                        printerror(str(e))
 
                     if mx:
                         out = [mx] + row
@@ -101,22 +102,22 @@ if __name__ == '__main__':
                         try:
                             ip = lookup.ip(mx)
                         except irnettools.errors.DNSError as e:
-                            print('Error: %s' % str(e), file=sys.stderr)
+                            printerror(str(e))
                             
                         if ip:
                             out = [ip] + out
                         else:
-                            print ('MX hostname \'%s\' does not resolve' % mx, file=sys.stderr)
+                            printerror('MX hostname \'%s\' does not resolve' % mx)
                             out = [''] + out
 
                     else:
-                        print('No MX for \'%s\'' % emailhostname, file=sys.stderr)
+                        printerror('No MX for \'%s\'' % emailhostname)
                         out = ['', ''] + row
 
                     output.writerow(out)
 
-    except IOError:
-        print("Error: Unable to open CSV input file")
+    except IOError as e:
+        printerror('Unable to open input file: %s' % str(e))
         exit(1)
 
 #

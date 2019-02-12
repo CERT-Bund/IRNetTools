@@ -27,6 +27,7 @@ import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
 import urllib.request
+from irnettools.io import printerror
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s [-acns] <filename>',
@@ -44,14 +45,14 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
         exit(1)
 
     if args.p:
         try:
             progress = irnettools.progress.Progress(args.filename[0])
         except irnettools.errors.ProgressError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
             exit(1)
 
     try:
@@ -85,7 +86,7 @@ if __name__ == '__main__':
                     else:
                         path = ''
                 except:
-                    print('Invalid record in line %d' % linenumber, file=sys.stderr)
+                    printerror('Invalid record in line %d' % linenumber)
                     continue
 
                 if irnettools.validate.hostname(host):
@@ -93,17 +94,17 @@ if __name__ == '__main__':
                     try:
                         ip = lookup.ip(host)
                     except irnettools.errors.DNSError as e:
-                        print('Error: %s' % str(e), file=sys.stderr)
+                        printerror(str(e))
 
                     if not ip:
-                        print('Hostname \'%s\' does not resolve' % host, file=sys.stderr)
+                        printerror('Hostname \'%s\' does not resolve' % host)
 
                 elif irnettools.validate.ip(host):
                     # valid IP
                     ip = host
 
                 else:
-                    print('Neither valid hostname nor IP address in line %d.' % linenumber, file=sys.stderr)
+                    printerror('Neither valid hostname nor IP address in line %d.' % linenumber)
 
                 url = proto + "://" + host + path
 
@@ -115,9 +116,9 @@ if __name__ == '__main__':
                         except urllib.error.HTTPError as e:
                             status = e.code
                         except urllib.error.URLError as e:
-                            print("Error connecting to %s" % host,  file=sys.stderr)
+                            printerror('Error connecting to %s' % host)
                         except Exception as e:
-                            print("Error: %s" % str(e),  file=sys.stderr)
+                            printerror(str(e))
                             status = ""
                 else:
                     ip = ""
@@ -135,10 +136,8 @@ if __name__ == '__main__':
 
                 output.writerow(row)
 
-        exit(0)
-
-    except IOError:
-        print("Unable to open input file")
+    except IOError as e:
+        printerror('Unable to open input file: %s' % str(e))
         exit(1)
 
 #

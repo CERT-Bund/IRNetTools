@@ -33,6 +33,7 @@ class Lookup:
         self.hosttoipv6cache = {}
         self.iptohostcache = {}
         self.hosttomxcache = {}
+        self.retries = 2
 
     def ipv4(self, hostname):
         """
@@ -48,22 +49,32 @@ class Lookup:
             return self.hosttoipv4cache[hostname]
         else:
             # result not in cache
-            try:
-                answers = self.resolver.query(hostname, 'A')
-                # if the hostname resolves to multiple IPs, we only take the first one
-                ip = str(answers[0].address)
-                self.hosttoipv4cache[hostname] = ip
-                return ip
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-                # hostname does not resolve
-                self.hosttoipv4cache[hostname] = None
-                return None
-            except dns.resolver.NoNameservers:
-                # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
-            except dns.exception.Timeout:
-                # Nameserver timeout
-                raise irnettools.errors.DNSError('Nameserver timeout')
+            retries = 0
+            while (retries <= self.retries):
+                try:
+                    answers = self.resolver.query(hostname, 'A')
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                    # hostname does not resolve
+                    self.hosttoipv4cache[hostname] = None
+                    return None
+                except dns.resolver.NoNameservers:
+                    # No nameserver
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('No nameservers available while trying to resolve %s' % hostname)
+                except dns.exception.Timeout:
+                    # Nameserver timeout
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('Nameserver timeout while trying to resolve %s' % hostname)
+                retries += 1
+
+            # if the hostname resolves to multiple IPs, we only take the first one
+            ip = str(answers[0].address)
+            self.hosttoipv4cache[hostname] = ip
+            return ip
 
     def ipv6(self, hostname):
         """
@@ -79,22 +90,32 @@ class Lookup:
             return self.hosttoipv6cache[hostname]
         else:
             # result not in cache
-            try:
-                answers = self.resolver.query(hostname, 'AAAA')
-                # if the hostname resolves to multiple IPs, we only take the first one
-                ip = str(answers[0].address)
-                self.hosttoipv6cache[hostname] = ip
-                return ip
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-                # hostname does not resolve
-                self.hosttoipv6cache[hostname] = None
-                return None
-            except dns.resolver.NoNameservers:
-                # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
-            except dns.exception.Timeout:
-                # Nameserver timeout
-                raise irnettools.errors.DNSError('Nameserver timeout')
+            retries = 0
+            while (retries <= self.retries):
+                try:
+                    answers = self.resolver.query(hostname, 'AAAA')
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                    # hostname does not resolve
+                    self.hosttoipv6cache[hostname] = None
+                    return None
+                except dns.resolver.NoNameservers:
+                    # No nameserver
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('No nameservers available while trying to resolve %s' % hostname)
+                except dns.exception.Timeout:
+                    # Nameserver timeout
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('Nameserver timeout while trying to resolve %s' % hostname)
+                retries += 1
+
+            # if the hostname resolves to multiple IPs, we only take the first one
+            ip = str(answers[0].address)
+            self.hosttoipv6cache[hostname] = ip
+            return ip
 
     def ip(self, hostname):
         """
@@ -121,22 +142,32 @@ class Lookup:
             return self.iptohostcache[ip]
         else:
             # result not in cache
-            try:
-                query = dns.reversename.from_address(ip)
-                answers = self.resolver.query(query, 'PTR')
-                hostname = str(answers[0].target).rstrip('\.')
-                self.iptohostcache[ip] = hostname
-                return hostname
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-                # hostname does not resolve
-                self.iptohostcache[ip] = None
-                return None
-            except dns.resolver.NoNameservers:
-                # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
-            except dns.exception.Timeout:
-                # Nameserver timeout
-                raise irnettools.errors.DNSError('Nameserver timeout')
+            query = dns.reversename.from_address(ip)
+            retries = 0
+            while (retries <= self.retries):
+                try:
+                    answers = self.resolver.query(query, 'PTR')
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                    # hostname does not resolve
+                    self.iptohostcache[ip] = None
+                    return None
+                except dns.resolver.NoNameservers:
+                    # No nameserver
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('No nameservers available while trying reverse lookup for %s' % ip)
+                except dns.exception.Timeout:
+                    # Nameserver timeout
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('Nameserver timeout while trying reverse lookup for %s' % ip)
+                retries += 1
+
+            hostname = str(answers[0].target).rstrip('\.')
+            self.iptohostcache[ip] = hostname
+            return hostname
 
     def mx(self, hostname):
         """
@@ -151,25 +182,35 @@ class Lookup:
             return self.hosttomxcache[hostname]
         else:
             # result not in cache
-            try:
-                answers = self.resolver.query(hostname, 'MX')
-                mxhostname = None
-                pref = None
-                for rdata in answers:
-                    if not pref or rdata.preference < pref:
-                        mxhostname = str(rdata.exchange).rstrip('\.')
-                        pref = rdata.preference
-                self.hosttomxcache[hostname] = mxhostname
-                return mxhostname
-            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-                # No MX configured
-                self.hosttomxcache[hostname] = None
-                return None
-            except dns.resolver.NoNameservers:
-                # No nameserver
-                raise irnettools.errors.DNSError('No nameservers available')
-            except dns.exception.Timeout:
-                # Nameserver timeout
-                raise irnettools.errors.DNSError('Nameserver timeout')
+            retries = 0
+            while (retries <= self.retries):
+                try:
+                    answers = self.resolver.query(hostname, 'MX')
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                    # No MX configured
+                    self.hosttomxcache[hostname] = None
+                    return None
+                except dns.resolver.NoNameservers:
+                    # No nameserver
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('No nameservers available while trying to get MX for %s' % hostname)
+                except dns.exception.Timeout:
+                    # Nameserver timeout
+                    if retries < self.retries:
+                        pass
+                    else:
+                        raise irnettools.errors.DNSError('Nameserver timeout while trying to get MX for %s' % hostname)
+                retries += 1
+
+            mxhostname = None
+            pref = None
+            for rdata in answers:
+                if not pref or rdata.preference < pref:
+                    mxhostname = str(rdata.exchange).rstrip('\.')
+                    pref = rdata.preference
+            self.hosttomxcache[hostname] = mxhostname
+            return mxhostname
 
 #

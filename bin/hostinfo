@@ -26,6 +26,7 @@ import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
+from irnettools.io import printerror
 
 def hostinfo(host):
     # check if input is a valid IP address
@@ -35,7 +36,7 @@ def hostinfo(host):
         try:
             hostname = lookup.hostname(ip)
         except irnettools.errors.DNSError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
 
     # check if input is a valid hostname
     elif irnettools.validate.hostname(host):
@@ -44,13 +45,13 @@ def hostinfo(host):
         try:
             ip = lookup.ip(host)
         except irnettools.errors.DNSError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
         if not ip:
-            print('Hostname does not resolve: %s' % host, file=sys.stderr)
+            printerror('Hostname does not resolve: %s' % host)
             return None
 
     else:
-        print('Not a valid IP address nor a valid hostname: %s' % host, file=sys.stderr)
+        printerror('Not a valid IP address nor a valid hostname: %s' % host)
         return None
 
     info = [ip, hostname]
@@ -59,21 +60,21 @@ def hostinfo(host):
     try:
         asn = lookup.asn(ip)
     except irnettools.errors.DNSError as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
     info = info + [asn]
 
     organization = ''
     try:
         organization = lookup.organization(ip)
     except irnettools.errors.DNSError as e:
-        print('Error: %s' % str(e), file=sys.stderr)
-        info = info + [organization]
+        printerror(str(e))
+    info = info + [organization]
 
     country = ''
     try:
         country = lookup.country(ip)
     except irnettools.errors.DNSError as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
     info = info + [country]
 
     return info
@@ -85,7 +86,7 @@ if __name__ == '__main__':
                                      -f <filename> to process a list of hostnames/IP addresses.')
     group = parser.add_argument_group()
     group.add_argument('host', nargs='?', help='single hostname or IP address')
-    group.add_argument('-f', metavar='filename', help='file containing list of hostnames/IP addresses. Use \'-\' as filename to read from stdin.')
+    group.add_argument('-f', metavar='filename', nargs=1, help='file containing list of hostnames/IP addresses. Use \'-\' as filename to read from stdin.')
     group.add_argument('-c', action='store_true', help='do not add CSV header to output')
     group.add_argument('-p', action='store_true', help='show progress information')
     group.add_argument('-v', '--version', action='version',
@@ -98,12 +99,13 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
         exit(1)
 
     if (args.host and args.f) or (not args.host and not args.f):
         parser.print_help()
         exit(0)
+
     elif (args.host):
         # single hostname/IP
         info = hostinfo(args.host.strip())
@@ -117,12 +119,12 @@ if __name__ == '__main__':
             try:
                 progress = irnettools.progress.Progress(args.f)
             except irnettools.errors.ProgressError as e:
-                print('Error: %s' % str(e), file=sys.stderr)
+                printerror(str(e))
                 exit(1)
 
         # filename
         try:
-            with io.open(args.filename[0], 'r') if args.f is not "-" else sys.stdin as infile:
+            with io.open(args.f[0], 'r') if args.f is not "-" else sys.stdin as infile:
                 linenumber = 0
                 if not args.c:
                     output.writerow(['ip','hostname','asn','org','country'])
@@ -138,8 +140,8 @@ if __name__ == '__main__':
                     if info:
                         output.writerow(info)
 
-        except IOError:
-            print("Unable to open input file")
+        except IOError as e:
+            printerror('Unable to open input file: %s' % str(e))
             exit(1)
 
 #

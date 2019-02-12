@@ -23,6 +23,7 @@ import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
+from irnettools.io import printerror
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
@@ -38,14 +39,14 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
         exit(1)
 
     if args.p:
         try:
             progress = irnettools.progress.Progress(args.filename[0])
         except irnettools.errors.ProgressError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
             exit(1)
 
     try:
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                 if idx == 0:
                     hostnamecount = row.count("hostname")
                     if hostnamecount != 1:
-                        print('Error: No or multiple columns "hostname" in input file', file=sys.stderr)
+                        printerror('No or multiple columns "hostname" in input file')
                         exit(1)
                     else:
                         hostnamepos = row.index("hostname")
@@ -74,27 +75,27 @@ if __name__ == '__main__':
                     try:
                         hostname = row[hostnamepos]
                     except IndexError:
-                        print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Invalid data in line %d' % (idx + 1))
                         continue
                     if not hostname:
-                        print('Empty hostname in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Empty hostname in line %d' % (idx + 1))
                     elif irnettools.validate.ip(hostname):
                         ip = hostname
-                        print('Hostname already is an IP address in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Hostname already is an IP address in line %d' % (idx + 1))
                     elif not irnettools.validate.hostname(hostname):
-                        print('Invalid hostname in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Invalid hostname in line %d' % (idx + 1))
                     else:
                         try:
                             ip = lookup.ip(hostname)
                         except irnettools.errors.DNSError as e:
-                            print('Error: %s' % str(e), file=sys.stderr)
+                            printerror('Error: %s' % str(e))
                         if not ip:
-                            print('Hostname does not resolve: %s' % hostname, file=sys.stderr)
+                            printerror('Hostname does not resolve: %s' % hostname)
 
                     output.writerow([ip] + row)
 
-    except IOError:
-        print("Error: Unable to open CSV input file")
+    except IOError as e:
+        printerror('Unable to open input file: %s' % str(e))
         exit(1)
 
 #

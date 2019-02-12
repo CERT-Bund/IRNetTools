@@ -23,6 +23,7 @@ import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
+from irnettools.io import printerror
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage='%(prog)s <filename>',
@@ -38,14 +39,14 @@ if __name__ == '__main__':
     try:
         lookup = irnettools.lookup.Lookup()
     except (ImportError, irnettools.errors.ConfigError, irnettools.errors.MaxmindError) as e:
-        print('Error: %s' % str(e), file=sys.stderr)
+        printerror(str(e))
         exit(1)
 
     if args.p:
         try:
             progress = irnettools.progress.Progress(args.filename[0])
         except irnettools.errors.ProgressError as e:
-            print('Error: %s' % str(e), file=sys.stderr)
+            printerror(str(e))
             exit(1)
 
     try:
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                 if idx == 0:
                     ipcount = row.count("ip")
                     if ipcount != 1:
-                        print('Error: No or multiple columns "ip" in input file', file=sys.stderr)
+                        printerror('No or multiple columns "ip" in input file')
                         exit(1)
                     else:
                         ippos = row.index("ip")
@@ -76,32 +77,32 @@ if __name__ == '__main__':
                     try:
                         ip = row[ippos]
                     except IndexError:
-                        print('Invalid data in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Invalid data in line %d' % (idx + 1))
                         continue
                     if not ip:
-                        print('Empty IP in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Empty IP in line %d' % (idx + 1))
                     elif not irnettools.validate.ip(ip):
-                        print('Invalid IP in line %d' % (idx + 1), file=sys.stderr)
+                        printerror('Invalid IP in line %d' % (idx + 1))
                     else:
                         try:
                             asn = lookup.asn(ip)
                         except irnettools.errors.DNSError as e:
-                            print('Error: %s' % str(e), file=sys.stderr)
+                            printerror(str(e))
 
                         try:
                             organization = lookup.organization(ip)
                         except irnettools.errors.DNSError as e:
-                            print('Error: %s' % str(e), file=sys.stderr)
+                            printerror(str(e))
 
                         try:
                             country = lookup.country(ip)
                         except irnettools.errors.DNSError as e:
-                            print('Error: %s' % str(e), file=sys.stderr)
+                            printerror(str(e))
 
                     output.writerow(row + [asn,organization,country])
                 
-    except IOError:
-        print("Error: Unable to open CSV input file")
+    except IOError as e:
+        printerror('Unable to open input file: %s' % str(e))
         exit(1)
 
 #
