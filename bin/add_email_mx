@@ -19,6 +19,7 @@ import io
 import sys
 import re
 import csv
+import os
 import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
@@ -49,10 +50,14 @@ if __name__ == '__main__':
             printerror(str(e))
             exit(1)
 
+    if os.name == "nt":
+        lt = "\r\n"
+    else:
+        lt = "\n"
     try:
-        with io.open(args.filename[0], 'r') if args.filename[0] is not "-" else sys.stdin as infile:
+        with io.open(args.filename[0], 'r', newline='') if args.filename[0] is not "-" else sys.stdin as infile:
             content = csv.reader(infile, delimiter=',', quotechar='"')
-            output = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            output = csv.writer(sys.stdout, delimiter=',', lineterminator=lt, quotechar='"', quoting=csv.QUOTE_ALL)
             for idx, row in enumerate(content):
                 if args.p:
                     progress.next()
@@ -91,7 +96,7 @@ if __name__ == '__main__':
                     mx = None
                     try:
                         mx = lookup.mx(emailhostname)
-                    except irnettools.errors.DNSError as e:
+                    except (irnettools.errors.DNSError, irnettools.errors.InvalidHostnameError) as e:
                         printerror(str(e))
 
                     if mx:
@@ -101,7 +106,7 @@ if __name__ == '__main__':
                         ip = None
                         try:
                             ip = lookup.ip(mx)
-                        except irnettools.errors.DNSError as e:
+                        except (irnettools.errors.DNSError, irnettools.errors.InvalidHostnameError) as e:
                             printerror(str(e))
                             
                         if ip:

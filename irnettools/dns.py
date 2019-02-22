@@ -42,7 +42,7 @@ class Lookup:
         If hostname does not resolve, returns None.
         """
         if not irnettools.validate.hostname(hostname):
-            raise irnettools.errors.InvalidHostnameError
+            raise irnettools.errors.InvalidHostnameError('Invalid hostname: %s' % hostname)
 
         if hostname in self.hosttoipv4cache:
             # result in cache
@@ -83,7 +83,7 @@ class Lookup:
         If hostname does not resolve, returns None.
         """
         if not irnettools.validate.hostname(hostname):
-            raise irnettools.errors.InvalidHostnameError
+            raise irnettools.errors.InvalidHostnameError('Invalid hostname: %s' % hostname)
 
         if hostname in self.hosttoipv6cache:
             # result in cache
@@ -135,7 +135,7 @@ class Lookup:
         If there is no PTR record, returns None.
         """
         if not irnettools.validate.ip(ip):
-            raise irnettools.errors.InvalidIPError
+            raise irnettools.errors.InvalidIPError('Invalid IP: %s' % ip)
 
         if ip in self.iptohostcache:
             # result in cache
@@ -175,7 +175,7 @@ class Lookup:
         Returns None if no MX configured.
         """
         if not irnettools.validate.hostname(hostname):
-            raise irnettools.errors.InvalidHostnameError
+            raise irnettools.errors.InvalidHostnameError('Invalid hostname: %s' % hostname)
 
         if hostname in self.hosttomxcache:
             # result in cache
@@ -210,6 +210,9 @@ class Lookup:
                 if not pref or rdata.preference < pref:
                     mxhostname = str(rdata.exchange).rstrip('\.')
                     pref = rdata.preference
+            # check MX hostname
+            if not irnettools.validate.hostname(mxhostname):
+                raise irnettools.errors.InvalidHostnameError('Invalid MX hostname: %s' % mxhostname)
             self.hosttomxcache[hostname] = mxhostname
             return mxhostname
 

@@ -9,7 +9,7 @@ Licensed under GNU Affero General Public License v3.0
 
 import sys
 
-def printerror(message, newline=True):
+def printerror(message, newline=False):
     if newline:
         print('', file=sys.stderr)
     print('Error: %s' % message, file=sys.stderr)
