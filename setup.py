@@ -27,6 +27,7 @@ setuptools.setup(
                'bin/add_asgeo',
                'bin/add_email_mx',
                'bin/add_host_ip',
+               'bin/csv_recol',
                'bin/hostinfo',
                'bin/process_urls',
                'bin/process_email_credentials',

@@ -142,10 +142,26 @@ CSV format.
     "173.194.76.26","gmail-smtp-in.l.google.com","max.mustermann@gmail.com","to******"
     "67.195.229.59","mta5.am0.yahoodns.net","alice.wonderland@yahoo.com","al******"
 
+### csv_recol
+
+Extract (and rearrange) columns from a CSV file.
+
+    $ cat sample-hostinfo.csv
+    "ip","hostname","asn","org","country"
+    "216.58.212.164","www.google.com","15169","Google LLC","US"
+    "212.227.17.168","smtp.gmx.de","8560","1&1 Internet SE","DE"
+    "2001:470:1:18::125","ipv6.test-ipv6.com","6939","Hurricane Electric LLC","US"
+
+    $ csv_recol sample-hostinfo.csv country asn ip hostname
+    "country","asn","ip","hostname"
+    "US","15169","216.58.212.164","www.google.com"
+    "DE","8560","212.227.17.168","smtp.gmx.de"
+    "US","6939","2001:470:1:18::125","ipv6.test-ipv6.com"
+
 ## Concatenation of tools
 
-All `add_*` tools can read CSV data also from stdin, so they can be
-concatenated like this:
+All tools taking CSV data as input can also read from stdin,
+so they can be concatenated like this:
 
     $ add_host_ip sample-hostport.csv | add_asgeo - | add_abuse_contact -
     "ip","hostname","port","asn","org","country","abuse_contact"

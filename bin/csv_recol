@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""csv_recol
+
+Copyright (c) 2019 Thomas Hungenberg
+
+Licensed under GNU Affero General Public License v3.0
+<http://www.gnu.org/licenses/agpl-3.0.html>
+
+Extract (and rearrange) columns from CSV file
+
+Output is printed to stdout, errors to stderr.
+"""
+
+import argparse
+import io
+import sys
+import csv
+import os
+import irnettools
+from irnettools.io import printerror
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Extract (and rearrange) columns from CSV file')
+    parser.add_argument('filename', nargs=1, help='CSV filename, use \'-\' as filename to read from stdin')
+    parser.add_argument('colnames', metavar='column_name', nargs='+', help='CSV column name')
+    parser.add_argument('-v', '--version', action='version',
+                        version='IRNetTools %(prog)s version {}'.format(irnettools.version),
+                        help='show the version number and exit')
+    args = parser.parse_args()
+
+    if os.name == "nt":
+        lt = "\r\n"
+    else:
+        lt = "\n"
+    try:
+        with io.open(args.filename[0], 'r', newline='') if args.filename[0] is not "-" else sys.stdin as infile:
+            reader = csv.DictReader(infile)
+            csvcolnames = reader.fieldnames
+            for col in args.colnames:
+                # check if requested column names exist
+                if not col in csvcolnames:
+                    printerror("Column '%s' does not exist in CSV input file" % col)
+                    exit(1)
+            writer = csv.DictWriter(sys.stdout, fieldnames=args.colnames, extrasaction='ignore',
+                                    delimiter=',', lineterminator=lt, quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writeheader()
+            for row in reader:
+                # write the rearranged rows
+                writer.writerow(row)
+                
+    except IOError as e:
+        printerror('Unable to open input file: %s' % str(e))
+        exit(1)
+
+#
