@@ -27,7 +27,7 @@ import irnettools.validate
 import irnettools.errors
 import irnettools.lookup
 import irnettools.progress
-import urllib.request
+import requests
 from irnettools.io import printerror
 
 if __name__ == '__main__':
@@ -113,18 +113,17 @@ if __name__ == '__main__':
 
                 url = proto + "://" + host + path
 
+                status = None
                 if ip:
                     # check HTTP status code
                     if args.n and ip and re.match('^https?$', proto):
                         try:
-                            status = urllib.request.urlopen(url, timeout=10).getcode()
-                        except urllib.error.HTTPError as e:
-                            status = e.code
-                        except urllib.error.URLError as e:
-                            printerror('Error connecting to %s' % host)
+                            response = requests.head(url, timeout=5)
+                            status = response.status_code
+                        except requests.exceptions.Timeout:
+                            printerror("Timeout checking HTTP status code")
                         except Exception as e:
                             printerror(str(e))
-                            status = ""
                 else:
                     ip = ""
 
