@@ -1,25 +1,6 @@
 #! /bin/bash
 PATH=/bin:/usr/bin
 
-# Location of databases (e.g. Maxmind)
-# If not set, defaults to USER_BASE/share/irnettools/databases/
-#DATABASES="~/irnettools-databases"
-
-# Maxmind license key
-# Since 2019-12-30, a license key is required for downloading Maxmind's GeoLite2 databases
-# See <https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-geolite2-databases/>
-MAXMIND_LICENSE_KEY="xxxxxxxx"
-
-###################################
-### NO USER CONFIGURATION BELOW ###
-###################################
-
-MAXMIND_COUNTRY_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
-MAXMIND_ASN_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
-
-MAXMIND_COUNTRY_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
-MAXMIND_ASN_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
-
 abspath()
 {
     [ "$#" -eq 1 ] || fail "No path given"
@@ -33,13 +14,19 @@ fail()
     exit 1
 }
 
+MAXMIND_LICENSE_KEY=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(getattr(irnettools.config, "MAXMIND_LICENSE_KEY", "xxxxxxxx"))');
 if [ $MAXMIND_LICENSE_KEY == "xxxxxxxx" ]; then
-    fail "Please set your Maxmind license key in $0"
+    CONFIG_FILE=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(irnettools.config.__file__)');
+    fail "Please set your Maxmind license key in $CONFIG_FILE"
 fi
 
+MAXMIND_COUNTRY_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
+MAXMIND_ASN_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
+
+DATABASES=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(getattr(irnettools.config, "DATABASES", ""))');
 if [ -z "$DATABASES" ]; then
     # DATABASES not defined, use default
-    PY_USER_BASE=$(python -c 'import site; print(site.USER_BASE)')
+    PY_USER_BASE=$(python3 -c 'import site; print(site.USER_BASE)')
     [ -z "$PY_USER_BASE" ] && fail "Error: Could not determine Python USER_BASE"
     DB_PATH="${PY_USER_BASE}/share/irnettools/databases"
 else
