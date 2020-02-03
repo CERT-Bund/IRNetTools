@@ -11,6 +11,10 @@ Uses IP2ASN lookup service provided by Team Cymru (https://www.team-cymru.com/IP
 
 Uses abuse contact lookup service provided by Abusix (https://www.abusix.com/contactdb).
 
+**Important note:**  
+Since 2019-12-30, a license key is required for downloading Maxmind's GeoLite2 databases  
+(see https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-geolite2-databases/).
+
 ## Tools
 
 ### add_abuse_contact
@@ -203,7 +207,9 @@ Add the following lines to your shell startup file (e.g. `~/.bashrc` or `~/.prof
     export PY_USER_BIN=$(python -c 'import site; print(site.USER_BASE + "/bin")')
     export PATH=$PATH:$PY_USER_BIN
 
-Re-read the shell startup file (e.g. `source ~/.bashrc`) and run
+Re-read the shell startup file (e.g. `source ~/.bashrc`).
+
+Set your Maxmind license key in `bin/update-irnettools-databases` and run
 `update-irnettools-databases` to download and install databases.
 
 ### Installation in a Python virtual environment
@@ -212,7 +218,9 @@ Re-read the shell startup file (e.g. `source ~/.bashrc`) and run
     $ cd irnettools
     $ source bin/activate
     $ pip3 install https://github.com/cert-bund/irnettools/archive/master.zip
-    $ update-irnettools-databases
+
+Set your Maxmind license key in `bin/update-irnettools-databases` and run
+`update-irnettools-databases` to download and install databases.
     
 ## License
 This software is licensed under GNU Affero General Public License version 3.

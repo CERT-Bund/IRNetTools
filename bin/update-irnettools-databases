@@ -5,6 +5,10 @@ PATH=/bin:/usr/bin
 # If not set, defaults to USER_BASE/share/irnettools/databases/
 #DATABASES="~/irnettools-databases"
 
+# Maxmind license key
+# Since 2019-12-30, a license key is required for downloading Maxmind's GeoLite2 databases
+# See <https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-geolite2-databases/>
+MAXMIND_LICENSE_KEY="xxxxxxxx"
 
 ###################################
 ### NO USER CONFIGURATION BELOW ###
@@ -12,6 +16,9 @@ PATH=/bin:/usr/bin
 
 MAXMIND_COUNTRY_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
 MAXMIND_ASN_URL="https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
+
+MAXMIND_COUNTRY_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
+MAXMIND_ASN_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
 
 abspath()
 {
@@ -25,6 +32,10 @@ fail()
     [ -d "$TMP_DIR" ] && rm -rf "$TMP_DIR"
     exit 1
 }
+
+if [ $MAXMIND_LICENSE_KEY == "xxxxxxxx" ]; then
+    fail "Please set your Maxmind license key in $0"
+fi
 
 if [ -z "$DATABASES" ]; then
     # DATABASES not defined, use default
@@ -59,14 +70,14 @@ if [ -n "$WGET" ]; then
 else
     curl -s -O "$TMP_DIR/country.tgz" "$MAXMIND_COUNTRY_URL"
 fi
-[ $? -gt 0 ] && fail "Downloading database failed"
-tar xzf "$TMP_DIR/country.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
-[ $? -gt 0 ] && fail "Unpacking database failed"
+[ $? -gt 0 ] && fail "Downloading database failed."
+tar mxzf "$TMP_DIR/country.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
+[ $? -gt 0 ] && fail "Unpacking database failed."
 FILENAME=`find "$TMP_DIR/" -name GeoLite2-Country.mmdb`
 if [ -n "$FILENAME" ]; then
     mv -f "$FILENAME" "$MAXMIND_COUNTRY_FILE"
 else
-    fail "Country database file not found in downloaded archive"
+    fail "Country database file not found in downloaded archive."
 fi
 
 echo "Updating Maxmind GeoLite2 ASN database."
@@ -75,14 +86,14 @@ if [ -n "$WGET" ]; then
 else
     curl -s -O "$TMP_DIR/asn.tgz" "$MAXMIND_ASN_URL"
 fi
-[ $? -gt 0 ] && fail "Downloading database failed"
-tar xzf "$TMP_DIR/asn.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
-[ $? -gt 0 ] && fail "Unpacking database failed"
+[ $? -gt 0 ] && fail "Downloading database failed."
+tar mxzf "$TMP_DIR/asn.tgz" -C "$TMP_DIR/" >/dev/null 2>&1
+[ $? -gt 0 ] && fail "Unpacking database failed."
 FILENAME=`find "$TMP_DIR/" -name GeoLite2-ASN.mmdb`
 if [ -n "$FILENAME" ]; then
     mv -f "$FILENAME" "$MAXMIND_ASN_FILE"
 else
-    fail "ASN database file not found in downloaded archive"
+    fail "ASN database file not found in downloaded archive."
 fi
 
 rm -rf "$TMP_DIR"
