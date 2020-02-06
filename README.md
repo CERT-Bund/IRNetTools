@@ -203,7 +203,7 @@ Install IRNetTools from github
 
 Add the following lines to your shell startup file (e.g. `~/.bashrc` or `~/.profile`)
 
-    export PY_USER_BIN=$(python -c 'import site; print(site.USER_BASE + "/bin")')
+    export PY_USER_BIN=$(/usr/bin/env python3 -c 'import site; print(site.USER_BASE + "/bin")')
     export PATH=$PATH:$PY_USER_BIN
 
 Re-read the shell startup file (e.g. `source ~/.bashrc`).

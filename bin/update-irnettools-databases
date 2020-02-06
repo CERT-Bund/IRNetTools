@@ -1,5 +1,4 @@
 #! /bin/bash
-PATH=/bin:/usr/bin
 
 abspath()
 {
@@ -14,20 +13,21 @@ fail()
     exit 1
 }
 
-MAXMIND_LICENSE_KEY=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(getattr(irnettools.config, "MAXMIND_LICENSE_KEY", "xxxxxxxx"))');
+MAXMIND_LICENSE_KEY=$(/usr/bin/env python3 -c 'import irnettools.config; print(getattr(irnettools.config, "MAXMIND_LICENSE_KEY", "xxxxxxxx"))');
+[ -z "$MAXMIND_LICENSE_KEY" ] && fail "Error: Config file not found."
 if [ $MAXMIND_LICENSE_KEY == "xxxxxxxx" ]; then
-    CONFIG_FILE=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(irnettools.config.__file__)');
+    CONFIG_FILE=$(/usr/bin/env python3 -c 'import irnettools.config; print(irnettools.config.__file__)');
     fail "Please set your Maxmind license key in $CONFIG_FILE"
 fi
 
 MAXMIND_COUNTRY_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
 MAXMIND_ASN_URL="https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
 
-DATABASES=$(python3 -c 'import site; import sys; sys.path.append(site.USER_SITE); import irnettools.config; print(getattr(irnettools.config, "DATABASES", ""))');
+DATABASES=$(/usr/bin/env python3 -c 'import irnettools.config; print(getattr(irnettools.config, "DATABASES", ""))');
 if [ -z "$DATABASES" ]; then
-    # DATABASES not defined, use default
-    PY_USER_BASE=$(python3 -c 'import site; print(site.USER_BASE)')
-    [ -z "$PY_USER_BASE" ] && fail "Error: Could not determine Python USER_BASE"
+    # DATABASES not defined, default to USER_BASE/share/irnettools/databases/
+    PY_USER_BASE=$(/usr/bin/env python3 -c 'import site; print(site.USER_BASE)')
+    [ -z "$PY_USER_BASE" ] && fail "Error: Could not determine Python USER_BASE."
     DB_PATH="${PY_USER_BASE}/share/irnettools/databases"
 else
     DB_PATH=`echo $DATABASES | sed -e "s|^~/|$HOME/|"`
