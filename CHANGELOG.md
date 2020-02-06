@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+## 0.9.2
+- Bugfix: `update-irnettools-databases`
+
 ## 0.9.1
 - Move `MAXMIND_LICENSE_KEY` configuration to `irnettools/config.py`
 
