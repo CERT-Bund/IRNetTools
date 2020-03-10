@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+## 0.9.3
+- Bugfix: Missing import in `process_email_credentials`
+
 ## 0.9.2
 - Bugfix: `update-irnettools-databases`
 
