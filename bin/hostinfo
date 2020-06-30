@@ -129,7 +129,7 @@ if __name__ == '__main__':
                 exit(1)
 
         try:
-            with io.open(args.f[0], 'r', newline='') if args.f is not "-" else sys.stdin as infile:
+            with io.open(args.f[0], 'r', newline='') if args.f[0] is not "-" else sys.stdin as infile:
                 linenumber = 0
                 if not args.c:
                     output.writerow(['ip','hostname','asn','org','country'])

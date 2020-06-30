@@ -1,11 +1,14 @@
 CHANGELOG
 =========
 
+## 0.9.4
+- Fix bug in `hostinfo` when reading from stdin
+
 ## 0.9.3
-- Bugfix: Missing import in `process_email_credentials`
+- Fix missing import in `process_email_credentials`
 
 ## 0.9.2
-- Bugfix: `update-irnettools-databases`
+- Fix bug in `update-irnettools-databases`
 
 ## 0.9.1
 - Move `MAXMIND_LICENSE_KEY` configuration to `irnettools/config.py`
