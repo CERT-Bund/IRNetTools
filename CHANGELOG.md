@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+## 0.9.5
+- Support port numbers in `process_urls`
+
 ## 0.9.4
 - Fix bug in `hostinfo` when reading from stdin
 

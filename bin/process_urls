@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Process URLs
 
-Copyright (c) 2018-2019 Thomas Hungenberg
+Copyright (c) 2018-2021 Thomas Hungenberg
 
 Licensed under GNU Affero General Public License v3.0
 <http://www.gnu.org/licenses/agpl-3.0.html>
@@ -11,8 +11,7 @@ http://www.example.com/path/file.ext
 as input and returns the (sanitized) URL along with the
 IP address the hostname resolves to in CSV format:
 "123.45.67.89","http://www[.]example[.]com/path/file.ext"
-Optionally adds AS number and description and checks
-HTTP status code for http(s) URLs.
+Optionally checks HTTP status code for http(s) URLs.
 
 Output is printed to stdout, errors to stderr.
 """
@@ -85,7 +84,8 @@ if __name__ == '__main__':
                     # split record into protocol, host and path
                     m = re.match("^([a-zA-Z]+)(:\/\/)([^\/]+)(\/[\x20-\x7f]*)?$", line.strip())
                     proto = m.group(1).lower()
-                    host = m.group(3).lower()
+                    hostport = m.group(3).lower()
+                    host = hostport.split(":")[0]
                     if m.group(4):
                         path = m.group(4)
                     else:
@@ -111,7 +111,7 @@ if __name__ == '__main__':
                 else:
                     printerror('Neither valid hostname nor IP address in line %d.' % linenumber)
 
-                url = proto + "://" + host + path
+                url = proto + "://" + hostport + path
 
                 status = None
                 if ip:
