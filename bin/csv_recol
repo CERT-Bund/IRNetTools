@@ -33,7 +33,7 @@ if __name__ == '__main__':
     else:
         lt = "\n"
     try:
-        with io.open(args.filename[0], 'r', newline='') if args.filename[0] is not "-" else sys.stdin as infile:
+        with io.open(args.filename[0], 'r', newline='') if args.filename[0] != "-" else sys.stdin as infile:
             reader = csv.DictReader(infile)
             csvcolnames = reader.fieldnames
             for col in args.colnames:

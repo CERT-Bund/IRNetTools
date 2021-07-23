@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+## 0.9.6
+- Fix syntax warnings with newer Python versions
+
 ## 0.9.5
 - Support port numbers in `process_urls`
 

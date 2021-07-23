@@ -55,7 +55,7 @@ if __name__ == '__main__':
     else:
         lt = "\n"
     try:
-        with io.open(args.filename[0], 'r', newline='') if args.filename[0] is not "-" else sys.stdin as infile:
+        with io.open(args.filename[0], 'r', newline='') if args.filename[0] != "-" else sys.stdin as infile:
             content = csv.reader(infile, delimiter=',', quotechar='"')
             output = csv.writer(sys.stdout, delimiter=',', lineterminator=lt, quotechar='"', quoting=csv.QUOTE_ALL)
             for idx, row in enumerate(content):

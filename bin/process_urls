@@ -60,7 +60,7 @@ if __name__ == '__main__':
     else:
         lt = "\n"
     try:
-        with io.open(args.filename[0], 'r', newline='') if args.filename[0] is not "-" else sys.stdin as urlfile:
+        with io.open(args.filename[0], 'r', newline='') if args.filename[0] != "-" else sys.stdin as urlfile:
             output = csv.writer(sys.stdout, delimiter=',', lineterminator=lt, quotechar='"', quoting=csv.QUOTE_ALL)
             linenumber = 0
             if not args.c:
